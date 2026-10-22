@@ -1,0 +1,3730 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#F6F4F0">
+<title>潇潇时尚轻奢女装店</title>
+<style>
+  /* ============================================================
+     潇潇时尚轻奢女装店 · H5「时装形象页」版
+     信息架构参考 MR&Er 关于页：形象片 → 店铺空间 → 新品 → 系列 → 门店 → 联系
+     ============================================================ */
+  :root {
+    --bg: #F6F4F0;
+    --bg-soft: #EAE6DF;
+    --ink: #2B2825;
+    --ink-soft: #6E675F;
+    --gold: #B8A48C;
+    --line: #DCD6CC;
+    --font-serif: "Noto Serif SC", "Songti SC", "SimSun", serif;
+    --font-sans: "PingFang SC", "Noto Sans SC", "Microsoft YaHei", sans-serif;
+    --page-max: 560px;
+    --space: 26px;
+    --section-gap: 64px;
+    --radius: 0px;
+    --ease: 0.25s ease;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    background: var(--bg); color: var(--ink);
+    font-family: var(--font-sans); font-size: 15px; line-height: 1.9;
+    letter-spacing: 0.04em; -webkit-font-smoothing: antialiased;
+  }
+  a { color: inherit; text-decoration: none; }
+  button { font-family: inherit; }
+  .page { max-width: var(--page-max); margin: 0 auto; padding: 0 0 64px; }
+
+  /* ===== 顶部导航 ===== */
+  .topbar {
+    position: sticky; top: 0; z-index: 30;
+    background: rgba(246, 244, 240, 0.96); backdrop-filter: blur(6px);
+    border-bottom: 1px solid var(--line);
+  }
+  .topbar-inner {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 18px var(--space);
+  }
+  .brand-mini { display: flex; flex-direction: column; line-height: 1.4; }
+  .brand-mini .cn { font-family: var(--font-serif); font-size: 18px; letter-spacing: 0.2em; color: var(--ink); }
+  .brand-mini .sub { font-size: 9px; letter-spacing: 0.35em; color: var(--gold); text-transform: uppercase; }
+  .account-entry {
+    font-size: 11px; color: var(--ink-soft); border: 1px solid var(--line);
+    border-radius: 0; padding: 6px 14px; background: transparent; cursor: pointer;
+    letter-spacing: 0.15em; text-transform: uppercase;
+    transition: border-color var(--ease), color var(--ease);
+  }
+  .account-entry:active { border-color: var(--gold); color: var(--gold); }
+  .account-entry.logged { color: var(--gold); border-color: var(--gold); }
+  .account-entry.admin { color: var(--ink); border-color: var(--ink); }
+
+  .nav-scroll {
+    display: flex; gap: 26px; overflow-x: auto;
+    padding: 0 var(--space) 16px; scrollbar-width: none; -webkit-overflow-scrolling: touch;
+  }
+  .nav-scroll::-webkit-scrollbar { display: none; }
+  .nav-item {
+    flex: 0 0 auto; font-size: 11px; color: var(--ink-soft);
+    letter-spacing: 0.15em; cursor: pointer; padding-bottom: 3px;
+    border-bottom: 1px solid transparent;
+    transition: color var(--ease), border-color var(--ease);
+  }
+  .nav-item.active { color: var(--ink); border-bottom-color: var(--ink); }
+
+  /* ===== 通用章节 ===== */
+  .section { padding: var(--section-gap) var(--space) 0; }
+  .section-head { margin-bottom: 28px; position: relative; }
+  /* 管理员登录后，各区块右上角出现「编辑」入口（手机端点按即可改图改文案） */
+  .sec-edit {
+    display: none; position: absolute; right: 0; top: 0;
+    font-size: 10px; letter-spacing: 0.16em; color: var(--gold);
+    border: 1px solid var(--gold); background: transparent;
+    padding: 5px 12px; cursor: pointer; -webkit-tap-highlight-color: transparent;
+  }
+  .sec-edit:active { background: var(--gold); color: var(--bg); }
+  body.is-admin .sec-edit { display: inline-block; }
+  .section-title {
+    font-family: var(--font-serif); font-weight: 400;
+    font-size: 17px; letter-spacing: 0.2em; color: var(--ink); line-height: 1.6;
+  }
+  .section-en {
+    display: block; margin-top: 6px; font-size: 9px;
+    letter-spacing: 0.35em; text-transform: uppercase; color: var(--gold);
+  }
+  .section-rule { display: block; width: 40px; height: 1px; background: var(--line); margin-top: 16px; }
+  .section-desc { margin-top: 14px; font-size: 11px; color: var(--ink-soft); letter-spacing: 0.08em; line-height: 2; }
+
+  /* ===== 轮播框架（形象片 / 品牌系列共用）
+   *   每 3 秒自动切换 + 左右三角切换，触发后定格 5 秒 ===== */
+  .car-stage { position: relative; overflow: hidden; }
+  .film-track, .series-track {
+    display: flex; will-change: transform;
+    transition: transform 0.5s cubic-bezier(0.22, 0.61, 0.36, 1);
+  }
+  .film-track.no-anim, .series-track.no-anim { transition: none; }
+  .film-card, .series-card { flex: 0 0 100%; width: 100%; cursor: pointer; }
+  .film-nav {
+    position: absolute; top: 50%; transform: translateY(-50%);
+    width: 40px; height: 40px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(246, 244, 240, 0.86); border: 1px solid var(--line);
+    color: var(--ink); cursor: pointer; -webkit-tap-highlight-color: transparent;
+    backdrop-filter: blur(4px);
+    transition: background var(--ease), color var(--ease), border-color var(--ease);
+  }
+  .film-nav.prev { left: 10px; }
+  .film-nav.next { right: 10px; }
+  .film-nav:active { background: var(--gold); border-color: var(--gold); color: var(--bg); }
+  .film-nav .tri { font-size: 13px; line-height: 1; display: block; }
+  .film-dots {
+    position: absolute; left: 0; right: 0; bottom: 12px;
+    display: flex; gap: 6px; justify-content: center; pointer-events: none;
+  }
+  .film-dots i {
+    width: 5px; height: 5px; border-radius: 50%;
+    background: rgba(43, 40, 37, 0.25); transition: background var(--ease), width var(--ease);
+  }
+  .film-dots i.on { background: var(--ink); width: 14px; border-radius: 3px; }
+  .film-media { aspect-ratio: 3 / 4; background: var(--bg-soft); overflow: hidden; }
+  .film-media img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  /* 画框下方的共用图注条：左侧名称，右侧英文 */
+  .cap-bar {
+    margin-top: 12px; font-family: var(--font-serif);
+    font-size: 12px; letter-spacing: 0.12em; color: var(--ink);
+    display: flex; justify-content: space-between; align-items: baseline; gap: 10px;
+    min-height: 19px;
+  }
+  .cap-bar .en {
+    font-family: var(--font-sans); font-size: 9px;
+    letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink-soft);
+  }
+
+  /* ===== 店铺空间：全宽图 ===== */
+  .space-list { display: flex; flex-direction: column; gap: 32px; }
+  .space-media { aspect-ratio: 4 / 5; background: var(--bg-soft); overflow: hidden; }
+  .space-media img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .space-caption {
+    margin-top: 12px; font-size: 11px; color: var(--ink-soft);
+    letter-spacing: 0.1em; line-height: 1.9;
+  }
+
+  /* ===== 本期新品：分类标签内嵌 ===== */
+  .filter-row {
+    display: flex; gap: 20px; overflow-x: auto;
+    padding-bottom: 4px; margin-bottom: 24px;
+    scrollbar-width: none; -webkit-overflow-scrolling: touch;
+  }
+  .filter-row::-webkit-scrollbar { display: none; }
+  .filter-item {
+    flex: 0 0 auto; font-size: 11px; color: var(--ink-soft);
+    letter-spacing: 0.12em; cursor: pointer; padding-bottom: 3px;
+    border-bottom: 1px solid transparent;
+    transition: color var(--ease), border-color var(--ease);
+  }
+  .filter-item.active { color: var(--ink); border-bottom-color: var(--ink); }
+  .filter-row.tight { margin-bottom: 12px; }
+  .sr-count { margin: 4px 0 20px; font-size: 10px; letter-spacing: 0.14em; color: var(--ink-soft); }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 32px 20px; }
+  .card { background: transparent; border: none; cursor: pointer; transition: opacity var(--ease); }
+  .card:active { opacity: 0.86; }
+  .card-media { position: relative; width: 100%; aspect-ratio: 3 / 4; background: var(--bg-soft); overflow: hidden; }
+  .card-media img, .card-media video { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .card-media .badge {
+    position: absolute; top: 8px; left: 8px; font-size: 9px; letter-spacing: 0.15em;
+    text-transform: uppercase; color: var(--bg); background: rgba(43,40,37,0.7); padding: 2px 7px;
+  }
+  .card-body { padding: 12px 0 0; }
+  .card-name { font-family: var(--font-serif); font-size: 14px; letter-spacing: 0.1em; color: var(--ink); line-height: 1.6; }
+  .card-desc {
+    margin-top: 4px; font-size: 10px; color: var(--ink-soft);
+    letter-spacing: 0.12em; text-transform: uppercase; line-height: 1.7;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .card-price {
+    margin-top: 6px; font-family: var(--font-serif); font-size: 12px;
+    letter-spacing: 0.1em; color: var(--gold);
+  }
+  .card-price.none { color: var(--ink-soft); font-size: 10px; letter-spacing: 0.14em; }
+
+  /* ===== 品牌系列：封面式卡片（系列名压在图上） ===== */
+  .series-media { position: relative; aspect-ratio: 3 / 4; background: var(--bg-soft); overflow: hidden; }
+  .series-media img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .series-overlay {
+    position: absolute; left: 0; right: 0; bottom: 0;
+    padding: 46px 14px 14px;
+    background: linear-gradient(to top, rgba(43,40,37,0.58), rgba(43,40,37,0));
+    color: #F6F4F0;
+    display: flex; align-items: baseline; justify-content: space-between; gap: 10px;
+  }
+  .series-cover-name { font-family: var(--font-serif); font-size: 16px; letter-spacing: 0.14em; }
+  .series-cover-go { font-size: 10px; letter-spacing: 0.16em; opacity: 0.88; white-space: nowrap; }
+
+  /* ===== 门店地址：手册式列表 ===== */
+  .store-list { display: flex; flex-direction: column; }
+  .store-item { padding: 18px 0; border-bottom: 1px solid var(--line); }
+  .store-item:last-child { border-bottom: none; }
+  .store-name { font-family: var(--font-serif); font-size: 14px; letter-spacing: 0.1em; color: var(--ink); line-height: 1.7; }
+  .store-addr { margin-top: 3px; font-size: 12px; color: var(--ink-soft); letter-spacing: 0.06em; }
+
+  /* ===== 商务联系：分组 ===== */
+  .contact-group { margin-bottom: 24px; }
+  .contact-label {
+    font-size: 9px; letter-spacing: 0.22em; text-transform: uppercase;
+    color: var(--ink-soft); line-height: 1.8;
+  }
+  .contact-value {
+    margin-top: 4px; font-size: 13px; letter-spacing: 0.06em; color: var(--ink);
+    border-bottom: 1px solid var(--line); display: inline-block; padding-bottom: 1px;
+  }
+
+  /* ===== 按钮 ===== */
+  .btn {
+    font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase;
+    padding: 9px 18px; border-radius: 0; border: 1px solid var(--line);
+    background: transparent; color: var(--ink-soft); cursor: pointer;
+    transition: border-color var(--ease), color var(--ease), background var(--ease);
+    -webkit-tap-highlight-color: transparent; text-align: center;
+    display: inline-block; line-height: 1.6;
+  }
+  .btn:active { border-color: var(--gold); color: var(--gold); }
+  .btn-primary { color: var(--ink); border-color: var(--ink); }
+  .btn-primary:active { background: var(--ink); color: var(--bg); }
+  .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn-outline { color: var(--ink-soft); border-color: var(--line); }
+  .btn-ghost { border-color: transparent; color: var(--ink-soft); }
+  .btn-ghost:active { color: var(--gold); }
+  .btn-sm { font-size: 10px; padding: 5px 12px; letter-spacing: 0.12em; }
+
+  /* ===== 浏览层 ===== */
+  .viewer { position: fixed; inset: 0; z-index: 100; background: rgba(43,40,37,0.97); display: none; flex-direction: column; }
+  .viewer.open { display: flex; }
+  .viewer-top { display: flex; align-items: center; justify-content: space-between; padding: 18px 22px; color: var(--bg); }
+  .viewer-count { font-size: 10px; letter-spacing: 0.25em; color: #C9C2B8; text-transform: uppercase; }
+  .viewer-close {
+    background: transparent; border: 1px solid rgba(246,244,240,0.3); color: var(--bg);
+    border-radius: 0; font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase;
+    padding: 6px 14px; cursor: pointer;
+  }
+  .viewer-stage { flex: 1; position: relative; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+  .viewer-media img, .viewer-media video { max-width: 92vw; max-height: 64vh; object-fit: contain; display: block; }
+  .viewer-nav {
+    position: absolute; top: 50%; transform: translateY(-50%); width: 38px; height: 38px;
+    border-radius: 50%; background: transparent; border: 1px solid rgba(246,244,240,0.28);
+    color: var(--bg); font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+  }
+  .viewer-nav.prev { left: 12px; }
+  .viewer-nav.next { right: 12px; }
+  .viewer-info { padding: 20px 26px 30px; color: var(--bg); background: rgba(43,40,37,0.6); border-top: 1px solid rgba(246,244,240,0.12); }
+  .viewer-info .name { font-family: var(--font-serif); font-size: 18px; letter-spacing: 0.14em; line-height: 1.6; }
+  .viewer-info .meta-line { margin-top: 6px; font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gold); }
+  .viewer-info .desc { margin-top: 12px; font-size: 12px; line-height: 2; color: #DDD7CD; max-height: 100px; overflow-y: auto; }
+  .viewer-actions { margin-top: 18px; display: flex; gap: 12px; }
+  .viewer-actions .btn { flex: 1; color: #DDD7CD; border-color: rgba(246,244,240,0.3); }
+  .viewer-actions .btn-outline { color: #DDD7CD; border-color: rgba(246,244,240,0.3); }
+  .viewer-actions .btn-outline.faved { border-color: var(--gold); color: var(--gold); }
+
+  /* ===== 抽屉 ===== */
+  .sheet { position: fixed; inset: 0; z-index: 110; background: rgba(43,40,37,0.5); display: none; align-items: flex-end; justify-content: center; }
+  .sheet.open { display: flex; }
+  .sheet-panel {
+    width: 100%; max-width: var(--page-max); max-height: 92vh; overflow-y: auto;
+    background: var(--bg); border-radius: 0;
+    padding: 26px var(--space) calc(34px + env(safe-area-inset-bottom));
+    border-top: 1px solid var(--line);
+  }
+  .sheet-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+  .sheet-title { font-family: var(--font-serif); font-size: 16px; letter-spacing: 0.16em; color: var(--ink); }
+  .sheet-close {
+    background: transparent; border: 1px solid var(--line); color: var(--ink-soft);
+    border-radius: 0; font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase;
+    padding: 5px 12px; cursor: pointer;
+  }
+
+  /* ===== 表单 ===== */
+  .form-group { margin-bottom: 22px; }
+  .form-label { display: block; font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink-soft); margin-bottom: 8px; }
+  .form-input, .form-select {
+    width: 100%; background: transparent; color: var(--ink); border: none;
+    border-bottom: 1px solid var(--line); border-radius: 0; padding: 8px 0;
+    font-size: 16px; font-family: var(--font-sans); line-height: 1.8;
+    letter-spacing: 0.04em; outline: none; transition: border-color var(--ease);
+  }
+  .form-input:focus, .form-select:focus { border-bottom-color: var(--gold); }
+  .form-textarea {
+    width: 100%; background: transparent; color: var(--ink); border: 1px solid var(--line);
+    border-radius: 0; padding: 10px; font-size: 16px; font-family: var(--font-sans);
+    line-height: 1.8; min-height: 72px; resize: vertical; outline: none;
+    transition: border-color var(--ease);
+  }
+  .form-textarea:focus { border-color: var(--gold); }
+  .form-file { width: 100%; font-size: 11px; color: var(--ink-soft); padding: 8px 0; letter-spacing: 0.05em; }
+  .preview-box {
+    margin-top: 12px; border: 1px solid var(--line); background: var(--bg-soft);
+    min-height: 80px; display: flex; align-items: center; justify-content: center; overflow: hidden;
+  }
+  .preview-box img, .preview-box video { max-width: 100%; max-height: 220px; display: block; }
+  .preview-box .ph { font-size: 10px; color: #9A9188; letter-spacing: 0.15em; text-transform: uppercase; }
+  .form-actions { display: flex; gap: 12px; margin-top: 24px; }
+  .form-actions .btn { flex: 1; }
+
+  /* ===== 账户列表 ===== */
+  .my-list { display: flex; flex-direction: column; margin-top: 6px; }
+  .my-item { display: flex; gap: 14px; align-items: center; border-bottom: 1px solid var(--line); padding: 14px 0; }
+  .my-thumb {
+    width: 52px; height: 70px; flex: 0 0 52px; background: var(--bg-soft);
+    overflow: hidden; display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-serif); color: var(--gold); font-size: 16px;
+  }
+  .my-thumb img, .my-thumb video { width: 100%; height: 100%; object-fit: cover; }
+  .my-info { flex: 1; min-width: 0; }
+  .my-name { font-family: var(--font-serif); font-size: 13px; color: var(--ink); letter-spacing: 0.08em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .my-meta { font-size: 10px; color: var(--ink-soft); margin-top: 4px; letter-spacing: 0.12em; text-transform: uppercase; }
+  .my-actions { display: flex; flex-direction: column; gap: 6px; }
+  .my-empty { text-align: center; font-size: 11px; color: #9A9188; padding: 32px 0; letter-spacing: 0.15em; text-transform: uppercase; }
+  .account-head {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 22px; padding-bottom: 18px; border-bottom: 1px solid var(--line);
+  }
+  .account-user { font-family: var(--font-serif); font-size: 15px; color: var(--ink); letter-spacing: 0.1em; }
+  .account-sub { font-size: 10px; color: var(--ink-soft); margin-top: 4px; letter-spacing: 0.12em; text-transform: uppercase; }
+  .role-badge {
+    display: inline-block; font-size: 9px; letter-spacing: 0.15em; text-transform: uppercase;
+    color: var(--gold); border: 1px solid var(--gold); border-radius: 0;
+    padding: 1px 6px; margin-left: 8px; vertical-align: middle;
+  }
+
+  /* ===== 提示与加载 ===== */
+  .toast {
+    position: fixed; left: 50%; bottom: 32px; transform: translateX(-50%) translateY(16px);
+    background: rgba(43,40,37,0.95); color: var(--bg); font-size: 11px; letter-spacing: 0.12em;
+    padding: 10px 20px; border-radius: 0; opacity: 0; pointer-events: none;
+    transition: opacity 0.25s, transform 0.25s; z-index: 200; max-width: 82vw; text-align: center; line-height: 1.7;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .toast.error { background: #7A4A3C; }
+  .loading-line { width: 56px; height: 1px; background: var(--line); position: relative; overflow: hidden; margin: 0 auto; }
+  .loading-line::after { content: ""; position: absolute; top: 0; left: -40%; width: 40%; height: 100%; background: var(--gold); animation: slide 1.2s ease-in-out infinite; }
+  @keyframes slide { 0% { left: -40%; } 100% { left: 100%; } }
+  .loading-wrap { display: none; padding: 22px 0; text-align: center; }
+  .loading-wrap.visible { display: block; }
+  .loading-wrap p { font-size: 10px; color: var(--ink-soft); margin-top: 10px; letter-spacing: 0.15em; text-transform: uppercase; }
+
+  /* ===== 页脚 ===== */
+  .footer {
+    position: relative;
+    margin-top: var(--section-gap); padding: 30px var(--space) 36px;
+    border-top: 1px solid var(--line); font-size: 10px; color: var(--ink-soft);
+    line-height: 2.2; letter-spacing: 0.1em;
+  }
+  .footer .fbrand { font-family: var(--font-serif); font-size: 13px; letter-spacing: 0.18em; color: var(--ink); margin-bottom: 8px; }
+  .footer a { color: var(--ink-soft); border-bottom: 1px solid var(--line); }
+  .footer .meta { margin-top: 12px; color: #9A9188; letter-spacing: 0.08em; }
+  /* ===== 首页公告条 ===== */
+  .notice {
+    padding: 10px var(--space); background: var(--ink); color: var(--bg);
+    font-size: 10px; letter-spacing: 0.14em; line-height: 1.7; text-align: center;
+  }
+  .notice[hidden] { display: none; }
+  .notice a { color: var(--bg); border-bottom: 1px solid rgba(246,244,240,0.45); }
+
+  /* ===== 库存状态 ===== */
+  .card-stock {
+    margin-top: 4px; font-size: 10px; letter-spacing: 0.12em; color: var(--gold);
+  }
+  .inv-sum {
+    display: flex; gap: 18px; flex-wrap: wrap; margin: 0 0 18px;
+    padding: 12px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);
+    font-size: 10px; letter-spacing: 0.12em; color: var(--ink-soft);
+  }
+  .inv-sum b { font-family: var(--font-serif); font-size: 14px; color: var(--ink); margin-right: 4px; }
+  .inv-sum .warn { color: var(--gold); }
+
+  /* 系列详情页：管理员快捷操作 */
+  .sr-admin { display: flex; gap: 10px; margin: 0 0 18px; }
+  .sr-admin .btn { flex: 1; }
+
+  .assoc-bar {
+    display: flex; gap: 18px; margin-bottom: 8px;
+    font-size: 10px; letter-spacing: 0.12em; color: var(--gold);
+  }
+  .assoc-bar span { cursor: pointer; }
+
+  .account-mail {
+    margin-top: 12px; text-align: center; font-size: 10px;
+    letter-spacing: 0.1em; color: var(--ink-soft); opacity: 0.85;
+  }
+
+  /* 地址管理：自动填充按钮 + 门店地图列表 */
+  .geo-row { display: flex; gap: 10px; }
+  .geo-row .btn { flex: 1; }
+  .map-list { display: flex; flex-direction: column; gap: 12px; }
+  .map-item {
+    border: 1px solid var(--line); padding: 14px 16px; cursor: pointer;
+    transition: border-color var(--ease), background var(--ease);
+  }
+  .map-item:active { border-color: var(--gold); background: var(--bg-soft); }
+  .map-name { font-family: var(--font-serif); font-size: 14px; letter-spacing: 0.1em; color: var(--ink); }
+  .map-addr { margin-top: 6px; font-size: 11px; line-height: 1.8; letter-spacing: 0.06em; color: var(--ink-soft); }
+  .map-note { margin-top: 4px; font-size: 10px; letter-spacing: 0.1em; color: var(--ink-soft); opacity: 0.8; }
+  .map-go { margin-top: 10px; font-size: 10px; letter-spacing: 0.16em; color: var(--gold); }
+
+  /* 货号：输入框 + 扫码 */
+  .code-row { display: flex; gap: 10px; align-items: stretch; }
+  .code-row .form-input { flex: 1; min-width: 0; }
+  .code-row .btn { flex: 0 0 auto; }
+  /* 调整展示范围：拖动 + 缩放取景 */
+  .crop-ratios { display: flex; gap: 8px; margin-bottom: 14px; }
+  .crop-ratios .filter-item { flex: 0 0 auto; }
+  .crop-stage {
+    position: relative; width: 100%; overflow: hidden;
+    background: #1B1917; border: 1px solid rgba(246, 244, 240, 0.45);
+    touch-action: none; cursor: move;
+  }
+  .crop-stage img {
+    position: absolute; transform-origin: center center;
+    user-select: none; -webkit-user-drag: none; pointer-events: none;
+  }
+  /* 井字参考线 */
+  .crop-stage::before {
+    content: ""; position: absolute; inset: 0; z-index: 2; pointer-events: none;
+    background-image:
+      linear-gradient(rgba(246, 244, 240, 0.26) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(246, 244, 240, 0.26) 1px, transparent 1px);
+    background-size: 100% 33.333%, 33.333% 100%;
+  }
+  .crop-slider {
+    display: flex; align-items: center; gap: 12px; margin: 16px 0;
+    font-size: 10px; letter-spacing: 0.12em; color: var(--ink-soft);
+  }
+  .crop-slider input[type="range"] { flex: 1; min-width: 0; }
+  .crop-actions { display: flex; gap: 10px; }
+  .crop-actions .btn { flex: 1; }
+
+  /* 扫码取景 */
+  .scan-box {
+    position: relative; width: 100%; aspect-ratio: 3 / 4; overflow: hidden;
+    background: #1B1917; margin-bottom: 14px;
+  }
+  .scan-box video { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .scan-frame {
+    position: absolute; left: 10%; right: 10%; top: 50%;
+    transform: translateY(-50%); aspect-ratio: 1 / 1;
+    border: 1px solid rgba(246, 244, 240, 0.6);
+  }
+
+  /* 库存：尺码多选 + 数量加减（按钮做大，方便手机点） */
+  .size-list {
+    max-height: 320px; overflow-y: auto; -webkit-overflow-scrolling: touch;
+    border: 1px solid var(--line); padding: 2px 12px;
+  }
+  .size-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 0; border-bottom: 1px dashed var(--line); opacity: 0.42;
+    transition: opacity var(--ease);
+  }
+  .size-row:last-child { border-bottom: none; }
+  .size-row.on { opacity: 1; }
+  .size-cb { width: auto; accent-color: var(--gold); flex: 0 0 auto; }
+  .size-name {
+    flex: 1; min-width: 0; font-size: 13px; letter-spacing: 0.08em;
+    color: var(--ink); cursor: pointer; padding: 8px 0;
+  }
+  .stepper { display: flex; align-items: stretch; flex: 0 0 auto; }
+  .step-btn {
+    width: 44px; height: 44px; flex: 0 0 44px;
+    border: 1px solid var(--line); background: transparent; color: var(--ink);
+    font-size: 20px; line-height: 1; cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: background var(--ease), color var(--ease), border-color var(--ease);
+  }
+  .step-btn:active { background: var(--gold); border-color: var(--gold); color: var(--bg); }
+  .step-val {
+    width: 60px; height: 44px; flex: 0 0 60px;
+    border: 1px solid var(--line); border-left: none; border-right: none;
+    background: transparent; text-align: center;
+    font-family: var(--font-serif); font-size: 15px; letter-spacing: 0.06em; color: var(--ink);
+  }
+
+  /* 系列关联商品：勾选列表 */
+  .assoc-list {
+    max-height: 240px; overflow-y: auto; -webkit-overflow-scrolling: touch;
+    border: 1px solid var(--line); padding: 4px 12px;
+  }
+  .assoc-row {
+    display: flex; align-items: center; gap: 10px; padding: 10px 0;
+    border-bottom: 1px dashed var(--line); cursor: pointer;
+  }
+  .assoc-row:last-child { border-bottom: none; }
+  .assoc-row input { width: auto; accent-color: var(--gold); }
+  .assoc-name {
+    flex: 1; font-size: 12px; letter-spacing: 0.06em; color: var(--ink); line-height: 1.5;
+  }
+  .assoc-meta { font-size: 10px; letter-spacing: 0.1em; color: var(--ink-soft); white-space: nowrap; }
+
+  /* 协议 / 隐私等内页文案 */
+  .doc-body {
+    font-size: 12px; line-height: 2.1; color: var(--ink-soft);
+    letter-spacing: 0.06em; white-space: pre-wrap; word-break: break-word;
+  }
+
+  /* ===== 右侧悬浮：联系店家 ===== */
+  .fab {
+    position: fixed; right: 12px; top: 56%; transform: translateY(-50%);
+    z-index: 60; display: flex; flex-direction: column; align-items: flex-end; gap: 10px;
+  }
+  .fab-row { position: relative; display: flex; }
+  .fab-btn {
+    padding: 12px 8px; background: rgba(246,244,240,0.94);
+    border: 1px solid var(--line); border-radius: 22px; cursor: pointer;
+    font-family: var(--font-serif); font-size: 11px; letter-spacing: 0.22em;
+    color: var(--ink); writing-mode: vertical-rl; line-height: 1.1;
+    backdrop-filter: blur(4px); box-shadow: 0 2px 14px rgba(43,40,37,0.08);
+    transition: border-color var(--ease), color var(--ease);
+  }
+  .fab-btn:active { border-color: var(--gold); color: var(--gold); }
+  .fab-btn.sub { font-size: 10px; padding: 10px 7px; letter-spacing: 0.16em; }
+
+
+  /* ===== 店家二维码弹窗 ===== */
+  .qrmask {
+    position: fixed; inset: 0; z-index: 130; background: rgba(43,40,37,0.62);
+    display: none; align-items: center; justify-content: center; padding: 0 28px;
+  }
+  .qrmask.open { display: flex; animation: fadein 0.2s ease both; }
+  @keyframes fadein { from { opacity: 0; } to { opacity: 1; } }
+  .qrbox {
+    width: 100%; max-width: 320px; background: var(--bg);
+    border: 1px solid var(--line); padding: 26px 24px 22px; text-align: center;
+  }
+  .qr-title { font-family: var(--font-serif); font-size: 15px; letter-spacing: 0.16em; color: var(--ink); }
+  .qr-sub { margin-top: 6px; font-size: 10px; letter-spacing: 0.1em; color: var(--ink-soft); line-height: 1.9; }
+  .qr-img {
+    margin: 18px auto 4px; width: 176px; height: 176px;
+    background: #FFFFFF; border: 1px solid var(--line);
+    display: flex; align-items: center; justify-content: center; overflow: hidden;
+  }
+  .qr-img img { width: 100%; height: 100%; object-fit: contain; display: block; }
+  .qr-img.lg { width: min(74vw, 268px); height: min(74vw, 268px); }
+  .qr-tabs { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-top: 14px; }
+  .qr-tab {
+    font-size: 10px; letter-spacing: 0.1em; color: var(--ink-soft);
+    border: 1px solid var(--line); padding: 4px 10px; cursor: pointer; background: transparent;
+    transition: color var(--ease), border-color var(--ease);
+  }
+  .qr-tab.on { color: var(--ink); border-color: var(--ink); }
+  .qr-act { margin-top: 18px; display: flex; gap: 10px; }
+  .qr-act .btn { flex: 1; }
+  .qr-meta { margin-top: 12px; font-size: 9px; color: #9A9188; letter-spacing: 0.08em; }
+
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand-mini">
+        <span class="cn">潇潇时尚</span>
+        <span class="sub">Xiaoxiao Atelier</span>
+      </div>
+      <button class="account-entry" id="btnAccount">管理员登录</button>
+    </div>
+    <nav class="nav-scroll" id="navScroll">
+      <span class="nav-item active" data-filter="film">形象片</span>
+      <span class="nav-item" data-filter="space">店铺空间</span>
+      <span class="nav-item" data-filter="new">本期新品</span>
+      <span class="nav-item" data-filter="series">品牌系列</span>
+      <span class="nav-item" data-filter="store">门店</span>
+    </nav>
+  </header>
+
+  <!-- ===== 首页公告（管理员开关，不显示时整条隐藏） ===== -->
+  <div class="notice" id="siteNotice" hidden></div>
+
+  <!-- ===== 形象片系列 ===== -->
+  <section class="section" id="sectionFilm" style="padding-top:36px">
+    <div class="section-head">
+      <button class="sec-edit" data-sec="films">编辑</button>
+      <div class="section-title">形象片系列<span class="section-en">Image of Xiaoxiao</span></div>
+      <span class="section-rule"></span>
+      <p class="section-desc">光影与衣料之间，保留一点不着急的停顿。</p>
+    </div>
+    <div class="car-stage" id="filmScroll"></div>
+    <div class="cap-bar" id="filmCaption"></div>
+  </section>
+
+  <!-- ===== 店铺空间 ===== -->
+  <section class="section" id="sectionSpace">
+    <div class="section-head">
+      <button class="sec-edit" data-sec="spaces">编辑</button>
+      <div class="section-title">店铺空间<span class="section-en">The Store Space</span></div>
+      <span class="section-rule"></span>
+      <p class="section-desc">质感、光影，气韵的流转。</p>
+    </div>
+    <div class="space-list" id="spaceList"></div>
+  </section>
+
+  <!-- ===== 本期新品 ===== -->
+  <section class="section" id="sectionNew">
+    <div class="section-head">
+      <button class="sec-edit" data-sec="garments">编辑</button>
+      <div class="section-title">本期新品<span class="section-en">New Arrivals</span></div>
+      <span class="section-rule"></span>
+    </div>
+    <div class="filter-row" id="filterRow">
+      <span class="filter-item active" data-cat="all">全部</span>
+      <span class="filter-item" data-cat="连衣裙">连衣裙</span>
+      <span class="filter-item" data-cat="针织">针织</span>
+      <span class="filter-item" data-cat="外套">外套</span>
+      <span class="filter-item" data-cat="牛仔裤">牛仔裤</span>
+    </div>
+    <div class="grid-2" id="gridNew"></div>
+  </section>
+
+  <!-- ===== 品牌系列 ===== -->
+  <section class="section" id="sectionSeries">
+    <div class="section-head">
+      <button class="sec-edit" data-sec="series">编辑</button>
+      <div class="section-title">品牌系列<span class="section-en">Collections</span></div>
+      <span class="section-rule"></span>
+    </div>
+    <div class="car-stage" id="seriesScroll"></div>
+    <div class="cap-bar" id="seriesCaption"></div>
+  </section>
+
+  <!-- ===== 门店地址 ===== -->
+  <section class="section" id="sectionStore">
+    <div class="section-head">
+      <button class="sec-edit" data-sec="stores">编辑</button>
+      <div class="section-title">门店<span class="section-en">Store Address</span></div>
+      <span class="section-rule"></span>
+    </div>
+    <div class="store-list" id="storeList"></div>
+  </section>
+
+  <!-- ===== 商务联系 ===== -->
+  <section class="section" id="sectionContact">
+    <div class="section-head">
+      <button class="sec-edit" data-sec="contacts">编辑</button>
+      <div class="section-title">商务联系<span class="section-en">Business Contact</span></div>
+      <span class="section-rule"></span>
+    </div>
+    <div id="contactList"></div>
+  </section>
+
+  <footer class="footer">
+    <button class="sec-edit" data-sec="links" style="top:24px">编辑</button>
+    <div class="fbrand">潇潇时尚轻奢女装店</div>
+    <div>XIAOXIAO ATELIER · 线上画册</div>
+    <div style="margin-top:10px" id="footerLinks"></div>
+    <div class="meta">备案信息占位 · 联系方式占位</div>
+  </footer>
+</div>
+
+<div class="viewer" id="viewer">
+  <div class="viewer-top">
+    <span class="viewer-count" id="viewerCount">1 / 1</span>
+    <button class="viewer-close" id="viewerClose">关闭</button>
+  </div>
+  <div class="viewer-stage" id="viewerStage">
+    <button class="viewer-nav prev" id="viewerPrev" aria-label="上一张">‹</button>
+    <div class="viewer-media" id="viewerMedia"></div>
+    <button class="viewer-nav next" id="viewerNext" aria-label="下一张">›</button>
+  </div>
+  <div class="viewer-info">
+    <div class="name" id="viewerName"></div>
+    <div class="meta-line" id="viewerMeta"></div>
+    <div class="desc" id="viewerDesc"></div>
+    <div class="viewer-actions">
+      <button class="btn btn-outline" id="btnFav">收藏</button>
+      <button class="btn btn-ghost" id="btnViewerClose2" style="color:#DDD7CD">继续浏览</button>
+    </div>
+  </div>
+</div>
+
+<div class="fab" id="fab">
+  <button class="fab-btn" id="fabBtn">联系店家</button>
+  <div class="fab-row">
+    <button class="fab-btn sub" id="fabShot">保存截屏</button>
+  </div>
+</div>
+
+<div class="qrmask" id="qrmask">
+  <div class="qrbox">
+    <div class="qr-title" id="qrTitle">联系店家</div>
+    <div class="qr-sub" id="qrDesc">长按二维码保存到相册，再用微信扫一扫</div>
+    <div class="qr-img" id="qrImg"></div>
+    <div class="qr-tabs" id="qrTabs"></div>
+    <div class="qr-act" id="qrMapRow" hidden>
+      <button class="btn btn-outline" id="qrMap">门店地图与导航</button>
+    </div>
+    <div class="qr-act">
+      <button class="btn btn-primary" id="qrSave">保存二维码</button>
+      <button class="btn btn-ghost" id="qrClose">关闭</button>
+    </div>
+    <div class="qr-meta" id="qrMeta"></div>
+  </div>
+</div>
+
+<!-- 页脚链接上传了图片时弹出：长按可识别二维码 -->
+<div class="qrmask" id="imgmask">
+  <div class="qrbox">
+    <div class="qr-title" id="imgTitle"></div>
+    <div class="qr-sub" id="imgSub">长按识别二维码</div>
+    <div class="qr-img lg" id="imgBox"></div>
+    <div class="doc-body" id="imgNote" style="margin-top:14px"></div>
+    <div class="qr-act">
+      <button class="btn btn-primary" id="imgOpen">打开链接</button>
+      <button class="btn btn-ghost" id="imgClose">关闭</button>
+    </div>
+  </div>
+</div>
+
+<div class="sheet" id="sheet">
+  <div class="sheet-panel" id="sheetPanel"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function () {
+  "use strict";
+
+  /* 前端不存放任何管理员密码：
+   *   线上登录走 /api/auth，密码只以「盐 + sha256 哈希」存在服务端环境变量里；
+   *   接口不可用时的「本机演示」密码，由管理员首次自行设置，同样只存哈希（见 localHash）。 */
+  var STORAGE = {
+    session: "xx_session", garments: "xx_garments", favorites: "xx_favorites",
+    localcred: "xx_localcred"                    /* 本机演示凭据：{ salt, hash }，不含明文 */
+  };
+
+  function placeholderSVG(label, bg, fg) {
+    var svg =
+      '<svg xmlns="http://www.w3.org/2000/svg" width="600" height="800" viewBox="0 0 600 800">' +
+      '<rect width="600" height="800" fill="' + bg + '"/>' +
+      '<rect x="40" y="40" width="520" height="720" fill="none" stroke="' + fg + '" stroke-opacity="0.15" stroke-width="1"/>' +
+      '<text x="300" y="410" text-anchor="middle" font-family="Noto Serif SC, Songti SC, serif" ' +
+      'font-size="32" fill="' + fg + '" fill-opacity="0.5" letter-spacing="6">' + label + '</text>' +
+      '<text x="300" y="458" text-anchor="middle" font-family="Noto Serif SC, Songti SC, serif" ' +
+      'font-size="11" fill="' + fg + '" fill-opacity="0.32" letter-spacing="8">XIAOXIAO</text>' +
+      '</svg>';
+    return "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
+  }
+
+  /* ===== 形象片 ===== */
+  var seedFilms = [
+    { id: "f1", name: "晨雾", en: "Morning Mist", media: placeholderSVG("晨雾", "#DCD6CC", "#2B2825") },
+    { id: "f2", name: "旧城", en: "Old Town", media: placeholderSVG("旧城", "#CFC6B8", "#2B2825") },
+    { id: "f3", name: "晚风", en: "Evening Breeze", media: placeholderSVG("晚风", "#D3C2BB", "#2B2825") }
+  ];
+
+  /* ===== 店铺空间 ===== */
+  var seedSpaces = [
+    { id: "sp1", media: placeholderSVG("空间一", "#E1DCD3", "#2B2825"), caption: "自然光落下的午后，衣料与墙面保持同一种安静。" },
+    { id: "sp2", media: placeholderSVG("空间二", "#DAD4C9", "#2B2825"), caption: "木质、金属与留白，陈列不拥挤，试穿不被打扰。" }
+  ];
+
+  /* ===== 本期新品 ===== */
+  var seedGarments = [
+    { id: "s1", name: "醋酸缎面衬衫", code: "00002-00001", category: "针织", series: "晨雾系列", price: 1290, desc: "垂坠感 · 米白", detail: "醋酸混纺缎面，光泽内敛，适合通勤与晚间小聚。", media: placeholderSVG("缎面", "#E8DFD3", "#2B2825"), type: "image" },
+    { id: "s2", name: "羊毛混纺半裙", code: "00002-00002", category: "连衣裙", series: "晨雾系列", price: 1580, desc: "直筒剪裁 · 燕麦", detail: "羊毛混纺，直筒微A版型，配针织与衬衫都稳妥。", media: placeholderSVG("半裙", "#D9CFC0", "#2B2825"), type: "image" },
+    { id: "s3", name: "真丝方领连衣裙", code: "00003-00001", category: "连衣裙", series: "晚风缎面", price: 2680, desc: "豆沙粉 · 收腰", detail: "真丝方领，收腰剪裁，豆沙粉低饱和，耐看。", media: placeholderSVG("连衣裙", "#D8BFB8", "#2B2825"), type: "image" },
+    { id: "s4", name: "亚麻廓形西装", code: "00004-00001", category: "外套", series: "旧城午后", price: 2180, desc: "雾霾蓝 · 落肩", detail: "亚麻混纺，落肩廓形，雾霾蓝适合春秋叠穿。", media: placeholderSVG("西装", "#B9C2C4", "#2B2825"), type: "image" },
+    { id: "s5", name: "高腰直筒牛仔裤", code: "00004-00002", category: "牛仔裤", series: "旧城午后", price: 980, desc: "原色 · 直筒", detail: "高腰直筒，原色丹宁，裤脚可卷边。", media: placeholderSVG("丹宁", "#B7B3A8", "#2B2825"), type: "image" },
+    { id: "s6", name: "羊绒圆领针织", code: "00002-00003", category: "针织", series: "晨雾系列", price: 1880, desc: "浅驼 · 圆领", detail: "羊绒混纺圆领针织，浅驼色，贴肤不扎。", media: placeholderSVG("针织", "#D6CBB8", "#2B2825"), type: "image" }
+  ];
+
+  /* 系列前缀：5 位数字，作为该系列商品货号的前缀（00001 归未入系列的商品用），系统自动分配 */
+  var seedSeries = [
+    { id: "sr1", name: "晨雾系列", code: "00002", en: "Morning Mist", media: placeholderSVG("晨雾", "#DCD6CC", "#2B2825") },
+    { id: "sr2", name: "旧城午后", code: "00003", en: "Old Town Noon", media: placeholderSVG("旧城", "#CFC6B8", "#2B2825") },
+    { id: "sr3", name: "晚风缎面", code: "00004", en: "Evening Satin", media: placeholderSVG("晚风", "#D3C2BB", "#2B2825") }
+  ];
+
+  var seedStores = [
+    { name: "杭州城西银泰店", addr: "城西银泰城 3F" },
+    { name: "杭州武林银泰店", addr: "武林银泰 A 馆 6F" }
+  ];
+
+  var seedContacts = [
+    { label: "PR / Business Cooperation", value: "hello@xiaoxiao.com" },
+    { label: "BD / Business Development", value: "bd@xiaoxiao.com" },
+    { label: "Complaint Telephone", value: "0571-00000000" },
+    { label: "加盟专线", value: "000-0000-0000" }
+  ];
+
+  var state = {
+    session: null, garments: [], favorites: [], filter: "all",
+    viewerList: [], viewerIndex: 0
+  };
+
+  function $(id) { return document.getElementById(id); }
+  function readJSON(key, fallback) { try { var v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; } catch (e) { return fallback; } }
+  function writeJSON(key, val) { try { localStorage.setItem(key, JSON.stringify(val)); } catch (e) {} }
+  function uid(prefix) { return prefix + "_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+  function isAdmin() {
+    var s = state.session;
+    if (!s || s.role !== "admin") return false;
+    if (s.exp && Date.now() / 1000 > s.exp) {          /* token 过期 → 自动登出 */
+      state.session = null; persistSession();
+      toast("登录已过期，请重新登录");
+      return false;
+    }
+    return true;
+  }
+  function escapeHtml(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+  function escapeAttr(s) { return escapeHtml(s).replace(/"/g, "&quot;"); }
+
+  var toastTimer = null;
+  function toast(msg, isError) {
+    var el = $("toast"); el.textContent = msg || "";
+    el.classList.toggle("error", !!isError); el.classList.add("show");
+    clearTimeout(toastTimer); toastTimer = setTimeout(function () { el.classList.remove("show"); }, 2200);
+  }
+  window.toast = toast;
+
+  /* ===== 接口 ===== */
+  /* ===== 忘记密码 / 改密码（邮箱只存在服务端，前端只见脱敏串） ===== */
+  function apiForgot(username) {
+    return fetch("/api/reset", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username: username })
+    }).then(function (r) {
+      if (!r.ok) {
+        var e = new Error("接口不可用");
+        e.offline = (r.status === 404 || r.status === 501 || r.status === 503);
+        throw e;
+      }
+      return r.json().catch(function () { return {}; });
+    }, function () {
+      var e = new Error("接口不可用");
+      e.offline = true;
+      throw e;
+    });
+  }
+  function apiResetPass(token, password) {
+    return fetch("/api/reset", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token: token, password: password })
+    }).then(function (r) {
+      return r.json().catch(function () { return {}; }).then(function (d) {
+        if (!r.ok) throw new Error(d.error || "重置失败");
+        return d;
+      });
+    });
+  }
+  function apiChangePass(oldPass, newPass) {
+    return fetch("/api/auth", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json", "Authorization": "Bearer " + (state.session || {}).token },
+      body: JSON.stringify({ oldPassword: oldPass, newPassword: newPass })
+    }).then(function (r) {
+      return r.json().catch(function () { return {}; }).then(function (d) {
+        if (!r.ok) throw new Error(d.error || "修改失败");
+        return d;
+      });
+    });
+  }
+  /* 账户信息：邮箱是否配置 + 脱敏串（完整邮箱不出服务端） */
+  function apiAuthInfo() {
+    return fetch("/api/auth", { headers: { "Authorization": "Bearer " + (state.session || {}).token } })
+      .then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; });
+  }
+
+  function openForgotSheet() {
+    openSheet(
+      '<div class="sheet-head"><div class="sheet-title">忘记密码</div>' +
+      '<button class="sheet-close" id="fgClose">关闭</button></div>' +
+      '<div class="form-group"><label class="form-label">管理员账号</label>' +
+      '<input class="form-input" id="fgUser" placeholder="请输入管理员账号" maxlength="20" autocomplete="username"></div>' +
+      '<div class="form-actions"><button class="btn btn-primary" id="fgOk">发送重置邮件</button></div>' +
+      '<p class="section-desc" style="margin-top:16px">账号正确的话，重置链接会发到<b>后台预留的管理员邮箱</b>；' +
+      '链接 30 分钟内有效，用后即失效。邮箱地址不会显示在页面上，也不会发给任何访客。</p>'
+    );
+    $("fgClose").onclick = closeSheet;
+    $("fgUser").addEventListener("keydown", function (e) { if (e.key === "Enter") $("fgOk").click(); });
+    $("fgOk").onclick = function () {
+      var u = ($("fgUser").value || "").trim();
+      if (!u) { toast("请输入管理员账号"); return; }
+      $("fgOk").disabled = true;
+      apiForgot(u).then(function () {
+        closeSheet();
+        toast("如账号正确，重置邮件已发送到预留邮箱");
+      }).catch(function (e) {
+        if (e && e.offline) { closeSheet(); toast("本机演示模式没有预留邮箱", true); return; }
+        toast("发送失败，请稍后再试", true);
+        $("fgOk").disabled = false;
+      });
+    };
+  }
+
+  function openResetSheet(token) {
+    openSheet(
+      '<div class="sheet-head"><div class="sheet-title">设置新密码</div>' +
+      '<button class="sheet-close" id="rsClose">关闭</button></div>' +
+      '<div class="form-group"><label class="form-label">新密码</label>' +
+      '<input class="form-input" id="rsPass" type="password" maxlength="32" placeholder="至少 8 位" autocomplete="new-password"></div>' +
+      '<div class="form-group"><label class="form-label">再输一次</label>' +
+      '<input class="form-input" id="rsPass2" type="password" maxlength="32" placeholder="确认新密码" autocomplete="new-password"></div>' +
+      '<div class="form-actions"><button class="btn btn-primary" id="rsOk">保存并登录</button></div>'
+    );
+    $("rsClose").onclick = function () { closeSheet(); clearResetParam(); };
+    ["rsPass", "rsPass2"].forEach(function (id) {
+      $(id).addEventListener("keydown", function (e) { if (e.key === "Enter") $("rsOk").click(); });
+    });
+    $("rsOk").onclick = function () {
+      var p = ($("rsPass").value || "").trim();
+      if (p.length < 8) { toast("新密码至少 8 位", true); return; }
+      if (p !== ($("rsPass2").value || "").trim()) { toast("两次输入的密码不一致", true); return; }
+      $("rsOk").disabled = true;
+      apiResetPass(token, p).then(function (d) {
+        clearResetParam();
+        state.session = { username: d.username || "admin", token: d.token, role: "admin", exp: d.exp || 0 };
+        persistSession(); renderAccountEntry(); closeSheet();
+        toast("密码已重置并登录");
+        openAccountSheet();
+      }).catch(function (e) {
+        toast(e.message || "重置失败", true);
+        $("rsOk").disabled = false;
+      });
+    };
+  }
+
+  function openChangePassSheet() {
+    openSheet(
+      '<div class="sheet-head"><div class="sheet-title">修改密码</div>' +
+      '<button class="sheet-close" id="cpClose">关闭</button></div>' +
+      '<div class="form-group"><label class="form-label">当前密码</label>' +
+      '<input class="form-input" id="cpOld" type="password" maxlength="32" autocomplete="current-password"></div>' +
+      '<div class="form-group"><label class="form-label">新密码</label>' +
+      '<input class="form-input" id="cpNew" type="password" maxlength="32" placeholder="至少 8 位" autocomplete="new-password"></div>' +
+      '<div class="form-group"><label class="form-label">再输一次</label>' +
+      '<input class="form-input" id="cpNew2" type="password" maxlength="32" autocomplete="new-password"></div>' +
+      '<div class="form-actions"><button class="btn btn-primary" id="cpOk">确认修改</button></div>' +
+      '<p class="section-desc" style="margin-top:16px">修改后会同时给预留管理员邮箱发一封告知邮件；' +
+      '忘记当前密码就退出登录，用「忘记密码」走邮箱重置。</p>'
+    );
+    $("cpClose").onclick = closeSheet;
+    ["cpOld", "cpNew", "cpNew2"].forEach(function (id) {
+      $(id).addEventListener("keydown", function (e) { if (e.key === "Enter") $("cpOk").click(); });
+    });
+    $("cpOk").onclick = function () {
+      var o = ($("cpOld").value || "").trim(), n = ($("cpNew").value || "").trim();
+      if (!o) { toast("请输入当前密码", true); return; }
+      if (n.length < 8) { toast("新密码至少 8 位", true); return; }
+      if (n !== ($("cpNew2").value || "").trim()) { toast("两次输入的新密码不一致", true); return; }
+      $("cpOk").disabled = true;
+      apiChangePass(o, n).then(function (d) {
+        state.session = { username: (state.session || {}).username || "admin", token: d.token, role: "admin", exp: d.exp || 0 };
+        persistSession(); closeSheet();
+        toast("密码已修改，已重新登录");
+      }).catch(function (e) {
+        toast(e.message || "修改失败", true);
+        $("cpOk").disabled = false;
+      });
+    };
+  }
+
+  function takeResetParam() {
+    var t = (location.search.match(/[?&]reset=([^&]+)/) || [])[1];
+    return t ? decodeURIComponent(t) : "";
+  }
+  function clearResetParam() {
+    try { history.replaceState(null, "", location.pathname); } catch (e) {}
+  }
+
+  /* err.offline = true 表示「服务端不可用」而不是「密码错」，只有这种情况才允许走本机演示 */
+  function apiAuth(username, password) {
+    return fetch("/api/auth", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username: username, password: password })
+    }).then(function (r) {
+      return r.json().catch(function () { return {}; }).then(function (d) {
+        if (r.ok) return d;
+        var e = new Error((d && d.error) || "登录失败");
+        e.status = r.status;
+        e.offline = (r.status === 404 || r.status === 501 || r.status === 503);
+        throw e;
+      });
+    }, function () {
+      var e = new Error("接口不可用");
+      e.offline = true;
+      throw e;
+    });
+  }
+  function apiGetGarments() {
+    return fetch("/api/garments").then(function (r) { if (!r.ok) throw new Error("接口不可用"); return r.json(); })
+      .then(function (d) { return d.garments || []; });
+  }
+  function apiSaveGarment(item, isEdit, token) {
+    var url = isEdit ? "/api/garments/" + item.id : "/api/garments";
+    return fetch(url, { method: isEdit ? "PUT" : "POST", headers: { "Content-Type": "application/json", "Authorization": "Bearer " + token }, body: JSON.stringify(item) })
+      .then(function (r) { if (!r.ok) throw new Error("保存失败"); return r.json(); });
+  }
+  function apiDeleteGarment(id, token) {
+    return fetch("/api/garments/" + id, { method: "DELETE", headers: { "Authorization": "Bearer " + token } })
+      .then(function (r) { if (!r.ok) throw new Error("删除失败"); return r.json(); });
+  }
+  /* 站点配置：门店 / 商务联系 / 页脚链接 / 形象片 / 店铺空间 / 品牌系列 / 分类 */
+  function apiGetSiteConfig() {
+    return fetch("/api/site-config")
+      .then(function (r) { if (!r.ok) throw new Error("接口不可用"); return r.json(); })
+      .then(function (d) { return (d && d.config) || null; });
+  }
+  function apiSaveSiteConfig(config, token) {
+    return fetch("/api/site-config", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json", "Authorization": "Bearer " + token },
+      body: JSON.stringify({ config: config })
+    }).then(function (r) { if (!r.ok) throw new Error("同步失败"); return r.json(); });
+  }
+
+  function initData() {
+    state.session = readJSON(STORAGE.session, null);
+    /* 旧版遗留的 token（不是签名格式）直接作废，避免拿着无效凭据到处 401 */
+    if (state.session && state.session.role === "admin") {
+      var tk = String(state.session.token || "");
+      if (tk.indexOf("v1.") !== 0 && tk.indexOf("local_") !== 0) {
+        state.session = null;
+        writeJSON(STORAGE.session, null);
+      }
+    }
+    state.favorites = readJSON(STORAGE.favorites, []);
+    var stored = readJSON(STORAGE.garments, null);
+    if (!stored) { stored = seedGarments.slice(); writeJSON(STORAGE.garments, stored); }
+    state.garments = stored;
+    apiGetGarments().then(function (list) {
+      if (list.length) { state.garments = list; writeJSON(STORAGE.garments, list); ensureCodes(); renderGrid(); }
+    }).catch(function () {});
+  }
+  function persistGarments() { writeJSON(STORAGE.garments, state.garments); }
+  function persistFavorites() { writeJSON(STORAGE.favorites, state.favorites); }
+  function persistSession() { writeJSON(STORAGE.session, state.session); }
+
+  function renderAccountEntry() {
+    var btn = $("btnAccount");
+    var admin = isAdmin();
+    document.body.classList.toggle("is-admin", admin);   /* 登录后各区块显示「编辑」入口 */
+    if (admin) {
+      btn.textContent = "管理后台";
+      btn.classList.add("logged", "admin");
+    } else {
+      btn.textContent = "管理员登录";
+      btn.classList.remove("logged", "admin");
+    }
+  }
+
+  /* ============================================================
+   * 轮播框架（形象片 / 品牌系列共用）
+   * 每 3 秒自动切换下一张，循环播放；点左右三角（或左右滑动）立即切换，
+   * 并定格 5 秒后重新进入循环。
+   * ============================================================ */
+  var CAR_GAP = 3000;      /* 自动切换间隔 */
+  var CAR_FREEZE = 5000;   /* 触发三角后的定格时长 */
+  var carousels = {};      /* key -> { index, pos, timer, resume, snapTimer, go, count } */
+
+  function carState(key) {
+    if (!carousels[key]) {
+      carousels[key] = { index: 0, pos: 0, timer: null, resume: null, snapTimer: null, go: null, count: 0 };
+    }
+    return carousels[key];
+  }
+  function carStop(key) {
+    var c = carState(key);
+    if (c.timer) { clearInterval(c.timer); c.timer = null; }
+    if (c.resume) { clearTimeout(c.resume); c.resume = null; }
+    if (c.snapTimer) { clearTimeout(c.snapTimer); c.snapTimer = null; }
+  }
+  function carStart(key) {
+    var c = carState(key);
+    carStop(key);
+    if (c.count < 2) return;
+    c.timer = setInterval(function () { if (c.go) c.go(1); }, CAR_GAP);
+  }
+  function carPause(key, ms) {
+    var c = carState(key);
+    if (c.timer) { clearInterval(c.timer); c.timer = null; }
+    if (c.resume) clearTimeout(c.resume);
+    c.resume = setTimeout(function () { c.resume = null; carStart(key); }, ms || CAR_FREEZE);
+  }
+
+  /* 构建一个轮播：画框 + 轨道 + 左右三角 + 指示点 + 画框外共用图注 */
+  function buildCarousel(opt) {
+    var key = opt.key, wrap = $(opt.wrapId), items = opt.items;
+    var c = carState(key);
+    carStop(key);
+    wrap.className = "car-stage";
+    wrap.innerHTML = "";
+
+    if (!items.length) {
+      wrap.innerHTML = '<div class="my-empty">' + escapeHtml(opt.emptyText || "还没有内容") + '</div>';
+      if (opt.capId && $(opt.capId)) $(opt.capId).innerHTML = "";
+      c.count = 0; c.go = null;
+      return;
+    }
+
+    var track = document.createElement("div");
+    track.className = opt.trackClass;
+    items.forEach(function (it) { track.appendChild(opt.makeCard(it, key)); });
+    /* 末尾追加第一张的副本：最后一页继续朝原方向滑到副本，再瞬间回到真正的第一张，
+       视觉上永远朝一个方向循环，不会出现「倒着拉回第一张」 */
+    var loop = items.length > 1;
+    if (loop) {
+      var clone = opt.makeCard(items[0], key);
+      clone.setAttribute("aria-hidden", "true");
+      track.appendChild(clone);
+    }
+
+    var prev = document.createElement("button");
+    prev.className = "film-nav prev";
+    prev.setAttribute("aria-label", "上一张");
+    prev.innerHTML = '<span class="tri">◄</span>';
+
+    var next = document.createElement("button");
+    next.className = "film-nav next";
+    next.setAttribute("aria-label", "下一张");
+    next.innerHTML = '<span class="tri">►</span>';
+
+    var dots = document.createElement("div");
+    dots.className = "film-dots";
+    dots.innerHTML = items.map(function () { return "<i></i>"; }).join("");
+
+    wrap.appendChild(track);
+    wrap.appendChild(prev);
+    wrap.appendChild(next);
+    wrap.appendChild(dots);
+
+    c.count = items.length;
+    if (c.index >= items.length) c.index = 0;
+    if (c.snapTimer) { clearTimeout(c.snapTimer); c.snapTimer = null; }
+
+    var n = items.length;
+    var DUR = 500;                                /* 与 CSS 过渡时长保持一致 */
+
+    function paint(pos) { track.style.transform = "translateX(" + (-pos * 100) + "%)"; }
+    function snap(pos) {                          /* 无动画瞬移 */
+      c.pos = pos;
+      track.classList.add("no-anim");
+      paint(pos);
+      void track.offsetWidth;
+      track.classList.remove("no-anim");
+    }
+    function syncMeta() {
+      Array.prototype.forEach.call(wrap.querySelectorAll(".film-dots i"), function (d, k) {
+        d.classList.toggle("on", k === c.index);
+      });
+      var cap = opt.capId && $(opt.capId);
+      if (cap) cap.innerHTML = opt.captionHtml(items[c.index]);
+    }
+    /* 待处理的归位（从副本回到第一张）；副本与第一张画面相同，中途执行也不会跳帧 */
+    function flushSnap() {
+      if (!c.snapTimer) return;
+      clearTimeout(c.snapTimer); c.snapTimer = null;
+      if (c.pos === n) snap(0);
+    }
+
+    /* d = 1 下一张，-1 上一张；两个方向都保持连续，不出现回拉 */
+    function go(d) {
+      if (!n) return;
+      if (!loop) { c.index = 0; snap(0); syncMeta(); return; }
+      flushSnap();
+      if (c.pos >= n || c.pos < 0) snap(0);        /* 兜底：绝不停在副本页之外 */
+
+      if (d > 0) {
+        var to = c.pos + 1;
+        c.pos = to; paint(to);
+        c.index = to % n; syncMeta();
+        if (to >= n) {                            /* 停在末尾副本上，动画结束后瞬间归位到第一张 */
+          c.snapTimer = setTimeout(function () { c.snapTimer = null; snap(0); }, DUR + 30);
+        }
+      } else {
+        if (c.pos <= 0) snap(n);                  /* 先瞬移到末尾副本，再继续朝原方向退 */
+        var back = c.pos - 1;
+        c.pos = back; paint(back);
+        c.index = back % n; syncMeta();
+      }
+    }
+    function step(d) {
+      carPause(key, CAR_FREEZE);                  /* 定格 5 秒后自动恢复 */
+      go(d);
+    }
+    c.go = go;
+
+    prev.onclick = function () { step(-1); };
+    next.onclick = function () { step(1); };
+
+    /* 手机端左右滑动也可切换，同样定格 5 秒 */
+    var sx = 0, sy = 0;
+    wrap.addEventListener("touchstart", function (e) {
+      if (e.touches.length !== 1) return;
+      sx = e.touches[0].clientX; sy = e.touches[0].clientY;
+      carPause(key, CAR_FREEZE);
+    }, { passive: true });
+    wrap.addEventListener("touchend", function (e) {
+      var t = e.changedTouches[0], dx = t.clientX - sx, dy = t.clientY - sy;
+      if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) step(dx < 0 ? 1 : -1);
+    }, { passive: true });
+
+    c.pos = c.index;
+    snap(c.index);
+    syncMeta();
+    if (items.length > 1) carStart(key);
+  }
+
+  function filmCard(f, key) {
+    var card = document.createElement("div"); card.className = "film-card";
+    var media = document.createElement("div"); media.className = "film-media";
+    var img = document.createElement("img"); img.src = f.media; img.alt = f.name; img.loading = "lazy";
+    media.appendChild(img);
+    card.appendChild(media);
+    card.addEventListener("click", function () {
+      carPause(key);                              /* 打开大图时先定格 */
+      openViewer([{ id: f.id, name: f.name, desc: f.en, media: f.media, type: "image" }], 0);
+    });
+    return card;
+  }
+
+  /* ===== 形象片：走共用轮播框架 ===== */
+  function renderFilms() {
+    buildCarousel({
+      key: "films",
+      wrapId: "filmScroll",
+      capId: "filmCaption",
+      trackClass: "film-track",
+      items: sectionData.films,
+      makeCard: filmCard,
+      emptyText: "还没有形象片",
+      captionHtml: function (f) {
+        return '<span>' + escapeHtml(f.name) + '</span><span class="en">' + escapeHtml(f.en || "") + '</span>';
+      }
+    });
+  }
+
+  /* ===== 渲染店铺空间 ===== */
+  function renderSpaces() {
+    var wrap = $("spaceList"); wrap.innerHTML = "";
+    sectionData.spaces.forEach(function (s) {
+      var item = document.createElement("div");
+      var media = document.createElement("div"); media.className = "space-media";
+      var img = document.createElement("img"); img.src = s.media; img.alt = "店铺空间"; img.loading = "lazy";
+      media.appendChild(img);
+      var cap = document.createElement("div"); cap.className = "space-caption"; cap.textContent = s.caption;
+      item.appendChild(media); item.appendChild(cap);
+      item.addEventListener("click", function () { openViewer([{ name: "店铺空间", desc: s.caption, media: s.media, type: "image" }], 0); });
+      wrap.appendChild(item);
+    });
+  }
+
+  /* ===== 渲染新品 ===== */
+  function renderGrid() {
+    var grid = $("gridNew"); grid.innerHTML = "";
+    var list = state.garments.filter(function (g) { return state.filter === "all" || g.category === state.filter; });
+    if (!list.length) { grid.innerHTML = '<div class="my-empty" style="grid-column:1/-1">这个分类下还没有内容</div>'; return; }
+    list.forEach(function (g, idx) {
+      var card = document.createElement("div"); card.className = "card";
+      var media = document.createElement("div"); media.className = "card-media";
+      if (g.type === "video") {
+        var v = document.createElement("video"); v.src = g.media; v.muted = true; v.playsInline = true;
+        v.setAttribute("playsinline", ""); v.setAttribute("muted", ""); v.preload = "metadata";
+        media.appendChild(v);
+        var badge = document.createElement("span"); badge.className = "badge"; badge.textContent = "视频"; media.appendChild(badge);
+      } else {
+        var img = document.createElement("img"); img.src = g.media; img.alt = g.name; img.loading = "lazy"; media.appendChild(img);
+      }
+      var stock = stockState(g.id);
+      if (stock.none) {
+        var sb = document.createElement("span"); sb.className = "badge"; sb.textContent = "暂时缺货";
+        media.appendChild(sb);
+      }
+      var body = document.createElement("div"); body.className = "card-body";
+      var name = document.createElement("div"); name.className = "card-name"; name.textContent = g.name;
+      var desc = document.createElement("div"); desc.className = "card-desc"; desc.textContent = g.desc || "";
+      body.appendChild(name); body.appendChild(desc);
+      var price = document.createElement("div");
+      price.className = "card-price" + (g.price ? "" : " none");
+      price.textContent = g.price ? "¥ " + g.price : "价格待定";
+      body.appendChild(price);
+      if (stock.rows && !stock.none && stock.low) {
+        var st = document.createElement("div"); st.className = "card-stock";
+        st.textContent = "仅剩 " + stock.total + " 件";
+        body.appendChild(st);
+      }
+      card.appendChild(media); card.appendChild(body);
+      card.addEventListener("click", function () { openViewer(list, idx); });
+      grid.appendChild(card);
+    });
+  }
+
+  /* ===== 分类：管理员可增删改，存本地 xx_categories ===== */
+  var CAT_KEY = "xx_categories";
+  var catData = ["连衣裙", "针织", "外套", "牛仔裤"];
+
+  function loadCats() {
+    var saved = readJSON(CAT_KEY, null);
+    if (saved && saved.length) catData = saved;
+  }
+  function persistCats() {
+    if (!writeJSON(CAT_KEY, catData)) toast("本地存储空间不足，分类可能无法保存", true);
+    pushSiteConfig();
+  }
+  function countInCat(name) {
+    return state.garments.filter(function (g) { return g.category === name; }).length;
+  }
+  function renderFilters() {
+    var wrap = $("filterRow");
+    if (!wrap) return;
+    var opts = [{ v: "all", t: "全部" }].concat(catData.map(function (c) { return { v: c, t: c }; }));
+    wrap.innerHTML = opts.map(function (o) {
+      return '<span class="filter-item' + (state.filter === o.v ? " active" : "") +
+        '" data-cat="' + escapeAttr(o.v) + '">' + escapeHtml(o.t) + '</span>';
+    }).join("");
+  }
+  function bindFilters() {
+    /* 事件委托：分类会动态增减 */
+    $("filterRow").addEventListener("click", function (e) {
+      var it = e.target && e.target.closest ? e.target.closest(".filter-item") : null;
+      if (!it) return;
+      state.filter = it.getAttribute("data-cat");
+      renderFilters(); renderGrid();
+    });
+  }
+
+  /* ===== 品牌系列：与形象片完全一致的轮播框架 ===== */
+
+  /* ============================================================
+   * 系列前缀 / 商品货号
+   *   货号 = 系列前缀(5位) - 流水号(5位)，例如 00002-00001，全站唯一
+   *   前缀由系统自动分配（系列创建时生成），管理员不可编辑
+   *   未归入系列的商品用通用编号（默认 00001）做前缀
+   * ============================================================ */
+  var generalCode = "00001";
+
+  function pad5(n) {
+    var s = String(n == null ? "" : n).replace(/\D/g, "");
+    while (s.length < 5) s = "0" + s;
+    return s.slice(-5);
+  }
+  function seriesCodeOf(name) {
+    var s = sectionData.series.filter(function (x) { return x.name === name; })[0];
+    return (s && s.code) ? s.code : "";
+  }
+  function prefixOfSeries(name) {
+    return seriesCodeOf(name) || generalCode;
+  }
+  function nextSeriesCode() {
+    var max = Number(generalCode) || 0;
+    sectionData.series.forEach(function (s) {
+      var n = Number(s.code);
+      if (!isNaN(n) && n > max) max = n;
+    });
+    return pad5(max + 1);
+  }
+  /* 某前缀下下一个可用流水号 */
+  function nextSerial(prefix) {
+    var max = 0;
+    state.garments.forEach(function (g) {
+      var m = String(g.code || "").match(/^(\d{5})-(\d{5})$/);
+      if (m && m[1] === prefix) max = Math.max(max, Number(m[2]));
+    });
+    return pad5(max + 1);
+  }
+  function makeCode(seriesName) {
+    var prefix = prefixOfSeries(seriesName);
+    return prefix + "-" + nextSerial(prefix);
+  }
+  /* 旧数据没有货号：按所属系列补一个，保证后续唯一性校验有据可依 */
+  function ensureCodes() {
+    var changed = false;
+    state.garments.forEach(function (g) {
+      if (String(g.code || "").trim()) return;
+      g.code = makeCode(g.series);
+      changed = true;
+    });
+    if (changed) persistGarments();
+  }
+  function codeExists(code, exceptId) {
+    return state.garments.some(function (g) {
+      return g.id !== exceptId && String(g.code || "").trim() === String(code || "").trim();
+    });
+  }
+  /* ============================================================
+   * 系列标签 ID（2 位，01-99）
+   *   与商品货号 / 系列编号完全分开：独立列表 xx_seriestags 存储，
+   *   通过 sid（系列 id）关联系列，不写进系列对象本身
+   * ============================================================ */
+  var TAG_KEY = "xx_seriestags";
+  var seriesTags = [];                 /* [{ id, sid, name, tag }] */
+
+  function pad2(n) {
+    var s = String(n == null ? "" : n).replace(/\D/g, "");
+    while (s.length < 2) s = "0" + s;
+    return s.slice(-2);
+  }
+  function loadSeriesTags() {
+    var saved = readJSON(TAG_KEY, null);
+    if (Object.prototype.toString.call(saved) === "[object Array]") seriesTags = saved;
+  }
+  function persistSeriesTags() {
+    if (!writeJSON(TAG_KEY, seriesTags)) toast("本地存储空间不足，系列标签可能无法保存", true);
+    pushSiteConfig();
+  }
+  function tagOfSeries(sid) {
+    var t = seriesTags.filter(function (x) { return x.sid === sid; })[0];
+    return t ? t.tag : "";
+  }
+  function nextSeriesTag() {
+    var max = 0;
+    seriesTags.forEach(function (t) {
+      var n = Number(t.tag); if (!isNaN(n) && n > max) max = n;
+    });
+    sectionData.series.forEach(function (s) {          /* 兼容旧数据写在系列上的 tag */
+      var n = Number(s.tag); if (!isNaN(n) && n > max) max = n;
+    });
+    return pad2(max + 1 > 99 ? 99 : max + 1);
+  }
+  function setSeriesTag(sid, name, tag) {
+    var hit = seriesTags.filter(function (x) { return x.sid === sid; })[0];
+    if (hit) { hit.name = name; hit.tag = tag; }
+    else seriesTags.push({ id: uid("st"), sid: sid, name: name, tag: tag });
+    persistSeriesTags();
+  }
+  function removeSeriesTag(sid) {
+    var n = seriesTags.length;
+    seriesTags = seriesTags.filter(function (x) { return x.sid !== sid; });
+    if (seriesTags.length !== n) persistSeriesTags();
+  }
+  /* 老系列没标签的，按创建顺序补一个，保证每个系列都有 2 位标签 ID */
+  function ensureSeriesTags() {
+    var changed = false;
+    sectionData.series.forEach(function (s) {
+      if (tagOfSeries(s.id)) return;
+      var t = String(s.tag || "").replace(/\D/g, "");
+      if (t) { seriesTags.push({ id: uid("st"), sid: s.id, name: s.name, tag: pad2(t) }); }
+      else { seriesTags.push({ id: uid("st"), sid: s.id, name: s.name, tag: nextSeriesTag() }); }
+      changed = true;
+    });
+    seriesTags = seriesTags.filter(function (t) {       /* 系列已删掉的标签一并清掉 */
+      return sectionData.series.some(function (s) { return s.id === t.sid; });
+    });
+    if (changed) persistSeriesTags();
+  }
+
+  /* 扫码结果 → 货号：
+     完整 00002-00001 → 原样；纯数字 ≤5 位 → 当前前缀 + 流水；更长 → 取前 5 位前缀 + 后 5 位流水 */
+  function normalizeCode(raw, seriesName) {
+    var v = String(raw == null ? "" : raw).trim();
+    if (!v) return "";
+    var full = v.match(/(\d{5})\s*[-–—]\s*(\d{5})/);
+    if (full) return full[1] + "-" + full[2];
+    var digits = v.replace(/\D/g, "");
+    if (!digits) return v;                       /* 条码内容是文字：原样保留，由人工确认 */
+    if (digits.length <= 5) return prefixOfSeries(seriesName) + "-" + pad5(digits);
+    if (digits.length >= 10) return digits.slice(0, 5) + "-" + digits.slice(-5);
+    return prefixOfSeries(seriesName) + "-" + pad5(digits.slice(-5));
+  }
+  /* ===== 系列归属：一律以「系列 id」为准 =====
+   * 商品上存 g.sid（系列 id），g.series 只是冗余的名字快照（改名时自动同步），
+   * 不再靠名字字符串匹配，避免改名 / 重名导致的错挂。 */
+  function seriesById(sid) {
+    return sectionData.series.filter(function (s) { return s.id === sid; })[0] || null;
+  }
+  function seriesNameOf(g) {
+    if (g.sid) { var s = seriesById(g.sid); if (s) return s.name; }
+    return g.series || "";
+  }
+  function inSeries(g, s) {                    /* 老数据没有 sid 时退回按名字认 */
+    if (!s) return false;
+    if (g.sid) return g.sid === s.id;
+    return !!g.series && g.series === s.name;
+  }
+  function countInSeries(s) {
+    return state.garments.filter(function (g) { return inSeries(g, s); }).length;
+  }
+  /* 数据校准：补 sid、清掉指向已删系列的、同步改名后的名字快照 */
+  function ensureSeriesLink() {
+    var changed = false;
+    state.garments.forEach(function (g) {
+      if (g.sid) {
+        var s = seriesById(g.sid);
+        if (!s) { g.sid = ""; g.series = ""; changed = true; return; }
+        if (g.series !== s.name) { g.series = s.name; changed = true; }
+        return;
+      }
+      if (g.series) {
+        var m = sectionData.series.filter(function (x) { return x.name === g.series; })[0];
+        if (m) { g.sid = m.id; changed = true; }
+      }
+    });
+    if (changed) persistGarments();
+  }
+
+  /* ===== 系列 ↔ 商品 关联逻辑 =====
+   * 关联关系只存一份：商品上的 g.series（系列名）。
+   * 系列侧改名 / 勾选项变化时统一走这里，保证两边永远一致。 */
+  function pushGarments(list) {                  /* 关联字段变了也要推到云端 */
+    if (!isAdmin()) return;
+    list.forEach(function (g) { apiSaveGarment(g, true, state.session.token).catch(function () {}); });
+  }
+  function applySeriesAssoc(sid, ids) {
+    var s = seriesById(sid);
+    if (!s) return;
+    var changed = [];
+    state.garments = state.garments.map(function (g) {
+      var want = ids.indexOf(g.id) !== -1;
+      if (want) {
+        if (g.sid === s.id && g.series === s.name) return g;
+        var a = Object.assign({}, g, { sid: s.id, series: s.name }); changed.push(a); return a;
+      }
+      if (inSeries(g, s)) {                     /* 取消勾选 → 解绑 */
+        var b = Object.assign({}, g, { sid: "", series: "" }); changed.push(b); return b;
+      }
+      return g;
+    });
+    persistGarments();
+    pushGarments(changed);
+    renderGrid(); renderSeries();
+  }
+  function unbindSeries(s) {
+    var n = countInSeries(s);
+    if (!n) return 0;
+    var changed = [];
+    state.garments = state.garments.map(function (g) {
+      if (!inSeries(g, s)) return g;
+      var a = Object.assign({}, g, { sid: "", series: "" }); changed.push(a); return a;
+    });
+    persistGarments();
+    pushGarments(changed);
+    renderGrid();
+    return n;
+  }
+
+  /* 封面式卡片：系列名压在图上，点击进入该系列的商品列表 */
+  function seriesCard(s, key) {
+    var card = document.createElement("div"); card.className = "series-card";
+    var media = document.createElement("div"); media.className = "series-media";
+    var img = document.createElement("img"); img.src = s.media; img.alt = s.name; img.loading = "lazy";
+    var over = document.createElement("div"); over.className = "series-overlay";
+    over.innerHTML = '<span class="series-cover-name">' + escapeHtml(s.name) + '</span>' +
+      '<span class="series-cover-go">查看系列 ›</span>';
+    media.appendChild(img); media.appendChild(over);
+    card.appendChild(media);
+    card.addEventListener("click", function () {
+      carPause(key);                              /* 打开列表时先定格 */
+      openSeriesSheet(s);
+    });
+    return card;
+  }
+
+  function renderSeries() {
+    buildCarousel({
+      key: "series",
+      wrapId: "seriesScroll",
+      capId: "seriesCaption",
+      trackClass: "series-track",
+      items: sectionData.series,
+      makeCard: seriesCard,
+      emptyText: "还没有品牌系列",
+      captionHtml: function (s) {
+        return '<span>' + escapeHtml(s.en || s.name) + '</span>' +
+          '<span class="en">' + countInSeries(s) + ' 件单品</span>';
+      }
+    });
+  }
+
+  /* ============================================================
+   * 系列商品列表：中等图例（两列）+ 条件筛选（分类 / 价格排序）
+   * ============================================================ */
+  var curSeries = null, srCat = "all", srSort = "new";
+
+  function seriesProducts(s) {
+    var list = state.garments.filter(function (g) { return inSeries(g, s); });
+    if (srCat !== "all") list = list.filter(function (g) { return g.category === srCat; });
+    if (srSort === "asc") list = list.slice().sort(function (a, b) { return (Number(a.price) || 0) - (Number(b.price) || 0); });
+    if (srSort === "desc") list = list.slice().sort(function (a, b) { return (Number(b.price) || 0) - (Number(a.price) || 0); });
+    return list;
+  }
+
+  function productTile(g, idx) {
+    var media = g.type === "video"
+      ? '<video src="' + escapeAttr(g.media) + '" muted playsinline preload="metadata"></video><span class="badge">视频</span>'
+      : '<img src="' + escapeAttr(g.media) + '" alt="' + escapeAttr(g.name) + '" loading="lazy">';
+    return '<div class="card" data-sp="' + idx + '"><div class="card-media">' + media +
+      stockBadgeHtml(g) + '</div>' +
+      '<div class="card-body"><div class="card-name">' + escapeHtml(g.name) + '</div>' +
+      '<div class="card-desc">' + escapeHtml(g.desc || "") + '</div>' +
+      '<div class="card-price' + (g.price ? "" : " none") + '">' +
+      (g.price ? "¥ " + escapeHtml(String(g.price)) : "价格待定") + '</div>' +
+      stockLineHtml(g) + '</div></div>';
+  }
+
+  function openSeriesSheet(s) {
+    curSeries = s; srCat = "all"; srSort = "new";
+    drawSeriesSheet();
+  }
+
+  /* 「当前正在浏览的系列」：从系列页上新时自动带出，省得再选一次 */
+  var pendingSeries = "";                    /* 存系列 id，不存名字 */
+  function uploadToSeries(s) {
+    adminTab = "garments";
+    pendingSeries = (s && s.id) || "";
+    openAccountSheet();
+    openUploadSheet(null);
+  }
+
+  function drawSeriesSheet() {
+    var s = curSeries;
+    if (!s) return;
+    var list = seriesProducts(s);
+
+    var chips = [{ v: "all", t: "全部" }].concat(catData.map(function (c) { return { v: c, t: c }; }));
+    var sorts = [{ v: "new", t: "最新上架" }, { v: "asc", t: "价格 ↑" }, { v: "desc", t: "价格 ↓" }];
+
+    function row(id, arr, cur) {
+      return '<div class="filter-row tight" id="' + id + '">' + arr.map(function (o) {
+        return '<span class="filter-item' + (cur === o.v ? " active" : "") +
+          '" data-v="' + escapeAttr(o.v) + '">' + escapeHtml(o.t) + '</span>';
+      }).join("") + '</div>';
+    }
+
+    var adminBar = isAdmin()
+      ? '<div class="sr-admin"><button class="btn btn-outline btn-sm" id="srEdit">编辑本系列</button>' +
+        '<button class="btn btn-primary btn-sm" id="srAdd">＋ 新增商品到本系列</button></div>'
+      : '';
+
+    var html =
+      '<div class="sheet-head"><div class="sheet-title">' + escapeHtml(s.name) + '</div>' +
+      '<button class="sheet-close" id="srClose">关闭</button></div>' +
+      adminBar +
+      '<p class="section-desc" style="margin:0 0 18px">' +
+      (tagOfSeries(s.id) ? '标签 ' + escapeHtml(tagOfSeries(s.id)) + ' · ' : '') +
+      escapeHtml(s.en || "") + ' · 共 ' + countInSeries(s) + ' 件单品</p>' +
+      row("srCats", chips, srCat) +
+      row("srSorts", sorts, srSort) +
+      '<div class="sr-count" id="srCount">' + list.length + ' 件符合条件</div>' +
+      (list.length
+        ? '<div class="grid-2" id="srGrid">' + list.map(productTile).join("") + '</div>'
+        : '<div class="my-empty">该系列还没有符合条件的单品</div>');
+
+    openSheet(html);
+    $("srClose").onclick = closeSheet;
+
+    var panel = $("sheetPanel");
+    if ($("srEdit")) {
+      $("srEdit").onclick = function () { adminTab = "series"; openAccountSheet(); openUploadSheet(s); };
+    }
+    if ($("srAdd")) {
+      $("srAdd").onclick = function () { uploadToSeries(s); };
+    }
+    Array.prototype.forEach.call(panel.querySelectorAll("#srCats .filter-item"), function (b) {
+      b.onclick = function () { srCat = b.getAttribute("data-v"); drawSeriesSheet(); };
+    });
+    Array.prototype.forEach.call(panel.querySelectorAll("#srSorts .filter-item"), function (b) {
+      b.onclick = function () { srSort = b.getAttribute("data-v"); drawSeriesSheet(); };
+    });
+    Array.prototype.forEach.call(panel.querySelectorAll("#srGrid .card"), function (c) {
+      c.onclick = function () { openViewer(list, parseInt(c.getAttribute("data-sp"), 10) || 0); };
+    });
+  }
+
+  /* ===== 门店与商务联系（管理员可增删改） ===== */
+  function renderStores() {
+    var wrap = $("storeList"); wrap.innerHTML = "";
+    sectionData.stores.forEach(function (s) {
+      var item = document.createElement("div"); item.className = "store-item";
+      item.innerHTML = '<div class="store-name">' + escapeHtml(s.name) + '</div><div class="store-addr">' + escapeHtml(s.addr) + '</div>';
+      wrap.appendChild(item);
+    });
+  }
+  function renderContacts() {
+    var wrap = $("contactList"); wrap.innerHTML = "";
+    sectionData.contacts.forEach(function (c) {
+      var g = document.createElement("div"); g.className = "contact-group";
+      g.innerHTML = '<div class="contact-label">' + escapeHtml(c.label) + '</div><div class="contact-value">' + escapeHtml(c.value) + '</div>';
+      wrap.appendChild(g);
+    });
+  }
+
+  /* ===== 库存（管理员维护）：一个商品一条记录，记录里是该商品各尺码的数量 ===== */
+  var INV_KEY = "xx_inventory";
+  var seedInventory = [
+    { id: "iv1", gid: "s1", items: [{ sku: "S", stock: 8 }, { sku: "M", stock: 2 }], alert: 3, status: "在售", note: "杭州仓 · M 码补货中" },
+    { id: "iv2", gid: "s2", items: [{ sku: "均码", stock: 12 }], alert: 3, status: "在售", note: "" },
+    { id: "iv3", gid: "s3", items: [{ sku: "S", stock: 0 }, { sku: "M", stock: 3 }], alert: 2, status: "在售", note: "S 码预售" },
+    { id: "iv4", gid: "s4", items: [{ sku: "均码", stock: 5 }], alert: 2, status: "在售", note: "" },
+    { id: "iv5", gid: "s5", items: [{ sku: "26", stock: 6 }, { sku: "28", stock: 1 }], alert: 2, status: "在售", note: "28 码仅剩 1 条" },
+    { id: "iv6", gid: "s6", items: [{ sku: "均码", stock: 4 }], alert: 3, status: "下架", note: "换季下架" }
+  ];
+  var inventory = seedInventory.slice();
+
+  /* 旧数据（一个规格一条记录）归并成新结构，保证升级后不丢数据 */
+  function normalizeInventory() {
+    var map = {}, order = [];
+    inventory.forEach(function (v) {
+      if (!v.gid) return;
+      if (!map[v.gid]) {
+        map[v.gid] = {
+          id: v.id, gid: v.gid, items: [], alert: v.alert || 0,
+          status: v.status || "在售", note: v.note || ""
+        };
+        order.push(v.gid);
+      }
+      var rec = map[v.gid];
+      var rows = Object.prototype.toString.call(v.items) === "[object Array]"
+        ? v.items : [{ sku: v.sku || "均码", stock: Number(v.stock) || 0 }];
+      rows.forEach(function (r) {
+        if (!r || !r.sku) return;
+        if (rec.items.some(function (x) { return x.sku === r.sku; })) return;
+        rec.items.push({ sku: r.sku, stock: Number(r.stock) || 0 });
+      });
+    });
+    inventory = order.map(function (g) { return map[g]; });
+  }
+
+  function loadInventory() {
+    var saved = readJSON(INV_KEY, null);
+    if (Object.prototype.toString.call(saved) === "[object Array]") inventory = saved;
+    normalizeInventory();
+  }
+  function persistInventory() {
+    if (!writeJSON(INV_KEY, inventory)) toast("本地存储空间不足，库存可能无法保存", true);
+    pushSiteConfig();
+  }
+
+  /* 某商品的库存状态：尺码数 / 总件数 / 是否预警 / 是否全缺货 */
+  function invOf(gid) {
+    return inventory.filter(function (v) { return v.gid === gid; })[0] || null;
+  }
+  function stockState(gid) {
+    var rec = invOf(gid);
+    if (!rec || rec.status === "下架") return { rows: 0, total: 0, low: false, none: false };
+    var items = rec.items || [], a = Number(rec.alert) || 0;
+    var total = 0, low = false;
+    items.forEach(function (x) {
+      var s = Number(x.stock) || 0;
+      total += s;
+      if (s > 0 && s <= a) low = true;
+    });
+    return { rows: items.length, total: total, low: low, none: items.length > 0 && total === 0 };
+  }
+  function stockBadgeHtml(g) {                    /* 压在图上的角标 */
+    return stockState(g.id).none ? '<span class="badge">暂时缺货</span>' : "";
+  }
+  function stockLineHtml(g) {                     /* 图下的小字 */
+    var st = stockState(g.id);
+    if (!st.rows || st.none) return "";
+    return st.low ? '<div class="card-stock">仅剩 ' + st.total + ' 件</div>' : "";
+  }
+  function inventorySummary() {
+    var goods = inventory.length, total = 0, low = 0, none = 0;
+    inventory.forEach(function (v) {
+      if (v.status === "下架") return;
+      var a = Number(v.alert) || 0;
+      (v.items || []).forEach(function (x) {
+        var s = Number(x.stock) || 0;
+        total += s;
+        if (s === 0) none++;
+        else if (s <= a) low++;
+      });
+    });
+    return { goods: goods, total: total, low: low, none: none };
+  }
+  function garmentName(gid) {
+    var g = state.garments.filter(function (x) { return x.id === gid; })[0];
+    return g ? g.name : "（商品已删除）";
+  }
+
+  /* ===== 尺码库：管理员可增删改，存本地 xx_sizes ===== */
+  var SIZE_KEY = "xx_sizes";
+  var sizeData = ["均码", "S", "M", "L", "XL", "26", "27", "28"];
+
+  function loadSizes() {
+    var saved = readJSON(SIZE_KEY, null);
+    if (Object.prototype.toString.call(saved) === "[object Array]" && saved.length) sizeData = saved;
+  }
+  function persistSizes() {
+    if (!writeJSON(SIZE_KEY, sizeData)) toast("本地存储空间不足，尺码可能无法保存", true);
+    pushSiteConfig();
+  }
+  function countSizeUsed(sz) {
+    return inventory.filter(function (v) {
+      return (v.items || []).some(function (x) { return x.sku === sz; });
+    }).length;
+  }
+  function openSizeSheet() {
+    if (!isAdmin()) { openAuthSheet(); return; }
+
+    var rows = sizeData.length ? sizeData.map(function (sz, i) {
+      return '<div class="my-item"><div class="my-thumb"><span>' + escapeHtml(sz) + '</span></div>' +
+        '<div class="my-info"><div class="my-name">' + escapeHtml(sz) + '</div>' +
+        '<div class="my-meta">' + countSizeUsed(sz) + ' 个商品在用</div></div>' +
+        '<div class="my-actions"><button class="btn btn-ghost btn-sm" data-sren="' + i + '">改名</button>' +
+        '<button class="btn btn-ghost btn-sm" data-sdel="' + i + '">删除</button></div></div>';
+    }).join("") : '<div class="my-empty">还没有尺码，在下方新增一个</div>';
+
+    openSheet(
+      '<div class="sheet-head"><div class="sheet-title">管理尺码</div><button class="sheet-close" id="szClose">关闭</button></div>' +
+      '<div class="my-list">' + rows + '</div>' +
+      '<div class="form-group" style="margin-top:24px"><label class="form-label">新增尺码</label>' +
+      '<input class="form-input" id="szNew" maxlength="8" placeholder="例如：XS / XL / 30 / 均码" ' +
+      'autocapitalize="off" autocorrect="off" spellcheck="false"></div>' +
+      '<div class="form-actions"><button class="btn btn-ghost" id="szBack">返回</button>' +
+      '<button class="btn btn-primary" id="szAdd">添加尺码</button></div>' +
+      '<p class="section-desc" style="margin-top:16px">尺码会同步显示在库存表单里。' +
+      '改名会同步更新库存中该尺码的记录；删除后，各商品里这条尺码的数量会一并移除。</p>'
+    );
+    $("szClose").onclick = closeSheet;
+    $("szBack").onclick = function () { openAccountSheet(); };
+
+    function addSize() {
+      var v = ($("szNew").value || "").trim();
+      if (!v) { toast("请输入尺码名称", true); return; }
+      if (sizeData.indexOf(v) !== -1) { toast("该尺码已存在", true); return; }
+      sizeData.push(v);
+      persistSizes();
+      toast("已添加尺码"); openSizeSheet();
+    }
+    $("szAdd").onclick = addSize;
+    $("szNew").addEventListener("keydown", function (e) { if (e.key === "Enter") addSize(); });
+
+    Array.prototype.forEach.call($("sheetPanel").querySelectorAll("[data-sren]"), function (b) {
+      b.onclick = function () {
+        var i = parseInt(b.getAttribute("data-sren"), 10);
+        var old = sizeData[i];
+        var nv = (window.prompt("把尺码「" + old + "」改名为：", old) || "").trim();
+        if (!nv || nv === old) return;
+        if (sizeData.indexOf(nv) !== -1) { toast("已存在同名尺码", true); return; }
+        sizeData[i] = nv;
+        inventory = inventory.map(function (v) {
+          return Object.assign({}, v, {
+            items: (v.items || []).map(function (x) { return x.sku === old ? { sku: nv, stock: x.stock } : x; })
+          });
+        });
+        persistInventory(); persistSizes();
+        refreshColl("inventory");
+        toast("已改名为「" + nv + "」"); openSizeSheet();
+      };
+    });
+
+    Array.prototype.forEach.call($("sheetPanel").querySelectorAll("[data-sdel]"), function (b) {
+      b.onclick = function () {
+        var i = parseInt(b.getAttribute("data-sdel"), 10);
+        var sz = sizeData[i], n = countSizeUsed(sz);
+        var msg = n ? "有 " + n + " 个商品的库存里有「" + sz + "」，删除后这些尺码的数量会被移除。确定删除？"
+                    : "确定删除尺码「" + sz + "」？";
+        if (!window.confirm(msg)) return;
+        sizeData.splice(i, 1);
+        inventory = inventory.map(function (v) {
+          return Object.assign({}, v, {
+            items: (v.items || []).filter(function (x) { return x.sku !== sz; })
+          });
+        });
+        persistInventory(); persistSizes();
+        refreshColl("inventory");
+        toast("已删除尺码"); openSizeSheet();
+      };
+    });
+  }
+
+  /* ===== 地址管理：供「联系店家 · 门店地图」调用，含经纬度用于唤起地图 ===== */
+  var ADDR_KEY = "xx_addresses";
+  var seedAddresses = [
+    { id: "ad1", name: "杭州城西银泰店", addr: "杭州市西湖区丰潭路 城西银泰城 3F", lat: "30.293600", lng: "120.083000", note: "地铁 2 号线丰潭路站 B 口步行 300 米" },
+    { id: "ad2", name: "杭州武林银泰店", addr: "杭州市拱墅区延安路 546 号 武林银泰 A 馆 6F", lat: "", lng: "", note: "" }
+  ];
+  var addresses = seedAddresses.slice();
+
+  function loadAddresses() {
+    var saved = readJSON(ADDR_KEY, null);
+    if (Object.prototype.toString.call(saved) === "[object Array]") addresses = saved;
+  }
+  function persistAddresses() {
+    if (!writeJSON(ADDR_KEY, addresses)) toast("本地存储空间不足，地址可能无法保存", true);
+    pushSiteConfig();
+  }
+  /* 高德 Web 服务 Key：配了才能把经纬度反查成文字地址（高德控制台申请「Web服务」类型） */
+  var MAP_KEY = "";
+  function hasLatLng(a) {
+    return !!(a && a.lat && a.lng);
+  }
+  /* 有经纬度 → 直接标一个点；没有 → 按地址文字搜索 */
+  function mapUrl(a) {
+    if (hasLatLng(a)) {
+      return "https://uri.amap.com/marker?position=" + encodeURIComponent(a.lng + "," + a.lat) +
+        "&name=" + encodeURIComponent(a.name || "") + "&src=xiaoxiao&coordinate=gaode&callnative=1";
+    }
+    return "https://uri.amap.com/search?keyword=" + encodeURIComponent((a.addr || "") + " " + (a.name || "")) +
+      "&src=xiaoxiao";
+  }
+  function openMap(a) {
+    window.open(mapUrl(a), "_blank", "noopener");
+  }
+  /* 逆地理编码：经纬度 → 文字地址（没配 Key 就只用经纬度） */
+  function regeo(lat, lng) {
+    if (!MAP_KEY) return Promise.reject(new Error("nokey"));
+    return fetch("https://restapi.amap.com/v3/geocode/regeo?key=" + encodeURIComponent(MAP_KEY) +
+      "&location=" + encodeURIComponent(lng + "," + lat) + "&extensions=base")
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (d.status !== "1") throw new Error(d.info || "查询失败");
+        return ((d.regeocode || {}).formatted_address) || "";
+      });
+  }
+
+  /* 地图选点：跳高德选点页，选完带着 name/lat/lng 回跳本页面，由这里回填表单 */
+  var PICK_KEY = "xx_pickpoint";
+  function pickOnMap() {
+    var back = location.origin + location.pathname;
+    var url = "https://m.amap.com/pickmarker?center=120.083000,30.293600&zoom=15" +
+      (MAP_KEY ? "&key=" + encodeURIComponent(MAP_KEY) : "") +
+      "&callback=" + encodeURIComponent(back);
+    window.open(url, "_blank", "noopener");
+    toast("在高德里选好点后会回到本页并自动填入");
+  }
+  function savePickFromQuery() {
+    var q = location.search;
+    if (!q) return;
+    var lat = (q.match(/[?&]lat=([^&]+)/) || [])[1];
+    var lng = (q.match(/[?&]lng=([^&]+)/) || [])[1];
+    if (!lat || !lng) return;
+    var name = decodeURIComponent(((q.match(/[?&]name=([^&]+)/) || [])[1]) || "");
+    var addr = decodeURIComponent(((q.match(/[?&]address=([^&]+)/) || [])[1]) || "");
+    writeJSON(PICK_KEY, { lat: decodeURIComponent(lat), lng: decodeURIComponent(lng), name: name, addr: addr, at: Date.now() });
+    try { history.replaceState(null, "", location.pathname); } catch (e) {}
+  }
+  function takePick() {
+    var p = readJSON(PICK_KEY, null);
+    if (!p) return null;
+    try { localStorage.removeItem(PICK_KEY); } catch (e) {}
+    return (Date.now() - (p.at || 0) > 10 * 60 * 1000) ? null : p;   /* 超过 10 分钟就作废 */
+  }
+
+  /* ===== 首页公告 ===== */
+  var NOTICE_KEY = "xx_notice";
+  var siteNotice = { on: false, text: "", url: "" };
+
+  function loadNotice() {
+    var saved = readJSON(NOTICE_KEY, null);
+    if (saved && typeof saved === "object") siteNotice = saved;
+  }
+  function persistNotice() {
+    writeJSON(NOTICE_KEY, siteNotice);
+    pushSiteConfig();
+  }
+  function renderNotice() {
+    var el = $("siteNotice");
+    if (!el) return;
+    var show = !!siteNotice.on && !!siteNotice.text;
+    el.hidden = !show;
+    if (!show) { el.innerHTML = ""; return; }
+    el.innerHTML = siteNotice.url
+      ? '<a href="javascript:void(0)" id="noticeLink">' + escapeHtml(siteNotice.text) + ' ›</a>'
+      : '<span>' + escapeHtml(siteNotice.text) + '</span>';
+    if (siteNotice.url) {
+      $("noticeLink").onclick = function () { window.open(siteNotice.url, "_blank", "noopener"); };
+    }
+  }
+  function openNoticeSheet() {
+    if (!isAdmin()) { openAuthSheet(); return; }
+    openSheet(
+      '<div class="sheet-head"><div class="sheet-title">首页公告</div><button class="sheet-close" id="ntClose">关闭</button></div>' +
+      '<div class="form-group"><label class="form-label">公告文案</label>' +
+      '<input class="form-input" id="ntText" maxlength="60" value="' + escapeAttr(siteNotice.text || "") +
+      '" placeholder="例如：春季新品已到店 · 到店试穿享专属搭配"></div>' +
+      '<div class="form-group"><label class="form-label">跳转链接（可选，http 开头）</label>' +
+      '<input class="form-input" id="ntUrl" maxlength="200" value="' + escapeAttr(siteNotice.url || "") +
+      '" placeholder="https://…"></div>' +
+      '<div class="form-group"><label class="form-label" style="display:flex;align-items:center;gap:8px;cursor:pointer">' +
+      '<input type="checkbox" id="ntOn"' + (siteNotice.on ? " checked" : "") +
+      ' style="width:auto"> 在首页顶部显示这条公告</label></div>' +
+      '<div class="form-actions"><button class="btn btn-ghost" id="ntBack">返回</button>' +
+      '<button class="btn btn-primary" id="ntSave">保存</button></div>' +
+      '<p class="section-desc" style="margin-top:16px">公告显示在页面顶部导航条下方，适合放营业时间、' +
+      '活动或到店提醒；未勾选则整条隐藏。空文案自动不显示。</p>'
+    );
+    $("ntClose").onclick = closeSheet;
+    $("ntBack").onclick = function () { adminTab = "garments"; openAccountSheet(); };
+    $("ntSave").onclick = function () {
+      var next = {
+        text: ($("ntText").value || "").trim(),
+        url: ($("ntUrl").value || "").trim(),
+        on: $("ntOn").checked
+      };
+      if (next.on && !next.text) { toast("请先填写公告文案", true); return; }
+      siteNotice = next;
+      persistNotice(); renderNotice();
+      toast(next.on ? "公告已发布" : "公告已关闭");
+      adminTab = "garments"; openAccountSheet();
+    };
+  }
+
+  /* ===== 页脚链接（管理员可增删改，游客可点开查看） ===== */
+  var FOOTER_KEY = "xx_footer";
+  var footerLinks = [
+    { id: "agreement", text: "用户协议", url: "", content: "用户协议占位，正式上线前请替换。" },
+    { id: "privacy", text: "隐私政策", url: "", content: "隐私政策占位，正式上线前请替换。" },
+    { id: "weibo", text: "微博", url: "", content: "微博占位，正式上线前请替换为账号名或主页链接。" },
+    { id: "wechat", text: "微信", url: "", content: "微信占位，正式上线前请替换为微信号或二维码说明。" }
+  ];
+
+  function loadFooter() {
+    var saved = readJSON(FOOTER_KEY, null);
+    if (Object.prototype.toString.call(saved) === "[object Array]") footerLinks = saved;
+  }
+  function persistFooter() {
+    if (!writeJSON(FOOTER_KEY, footerLinks)) toast("本地存储空间不足，改动可能无法保存", true);
+    pushSiteConfig();
+  }
+  function renderFooter() {
+    var wrap = $("footerLinks");
+    if (!wrap) return;
+    wrap.innerHTML = footerLinks.map(function (l, i) {
+      return '<a href="javascript:void(0)" data-fl="' + i + '">' + escapeHtml(l.text) + '</a>';
+    }).join(' &nbsp;·&nbsp; ');
+    Array.prototype.forEach.call(wrap.querySelectorAll("[data-fl]"), function (a) {
+      a.onclick = function () {
+        var l = footerLinks[parseInt(a.getAttribute("data-fl"), 10)];
+        if (!l) return;
+        /* 优先级：上传的图片（可长按识别二维码）> 外链 > 内页文案 */
+        if (l.media) { openImageSheet(l); return; }
+        if (/^https?:\/\//i.test(l.url || "")) { window.open(l.url, "_blank", "noopener"); return; }
+        openTextSheet(l.text, l.content || "暂无内容");
+      };
+    });
+  }
+  /* 无外链时展示内页文案 */
+  function openTextSheet(title, content) {
+    openSheet(
+      '<div class="sheet-head"><div class="sheet-title">' + escapeHtml(title) + '</div>' +
+      '<button class="sheet-close" id="docClose">关闭</button></div>' +
+      '<div class="doc-body">' + escapeHtml(content || "暂无内容") + '</div>'
+    );
+    $("docClose").onclick = closeSheet;
+  }
+  /* 上传了图片时弹出大图，供长按识别二维码 */
+  function openImageSheet(l) {
+    $("imgTitle").textContent = l.text || "";
+    $("imgSub").textContent = l.url ? "长按识别二维码 · 或点下方打开链接" : "长按识别二维码";
+    $("imgBox").innerHTML = '<img src="' + escapeAttr(l.media) + '" alt="' + escapeAttr(l.text || "") + '">';
+    var note = $("imgNote");
+    note.textContent = l.content || "";
+    note.style.display = l.content ? "" : "none";
+    $("imgOpen").style.display = /^https?:\/\//i.test(l.url || "") ? "" : "none";
+    $("imgOpen").onclick = function () { window.open(l.url, "_blank", "noopener"); };
+    $("imgmask").classList.add("open");
+  }
+
+  /* ============================================================
+   * 店家二维码库
+   * 每个条目 media 可换成真实二维码图片：
+   *   media: "https://<你的存储域名>/qr-wechat.png"
+   * 目前用内置 SVG 占位码，离线可用、无需联网。
+   * ============================================================ */
+  var QR_LIBRARY = [
+    { id: "wechat", name: "微信客服", desc: "长按识别，咨询款式与尺码", media: qrPlaceholder("wechat") },
+    { id: "wecom",  name: "企业微信", desc: "长按识别，加入专属搭配群", media: qrPlaceholder("wecom") },
+    { id: "store",  name: "到店预约", desc: "长按识别，预约到店试穿",   media: qrPlaceholder("store") }
+  ];
+
+  /* 生成占位二维码（伪码点阵 + 三个定位角），仅用于演示 */
+  function qrPlaceholder(seedText) {
+    var seed = 7;
+    for (var i = 0; i < seedText.length; i++) seed = (seed * 31 + seedText.charCodeAt(i)) % 2147483647;
+    function rnd() { seed = (seed * 1103515245 + 12345) % 2147483647; return seed / 2147483647; }
+
+    var N = 25, cell = 12, quiet = 2, size = (N + quiet * 2) * cell;
+    var body = "";
+    function inFinder(x, y) {
+      return (x < 8 && y < 8) || (x >= N - 8 && y < 8) || (x < 8 && y >= N - 8);
+    }
+    for (var y = 0; y < N; y++) {
+      for (var x = 0; x < N; x++) {
+        if (inFinder(x, y)) continue;
+        if (rnd() > 0.5) {
+          body += '<rect x="' + (x + quiet) * cell + '" y="' + (y + quiet) * cell +
+                  '" width="' + cell + '" height="' + cell + '" fill="#2B2825"/>';
+        }
+      }
+    }
+    function finder(ox, oy) {
+      return '<rect x="' + (ox + quiet) * cell + '" y="' + (oy + quiet) * cell +
+             '" width="' + 7 * cell + '" height="' + 7 * cell + '" fill="#2B2825"/>' +
+             '<rect x="' + (ox + quiet + 1) * cell + '" y="' + (oy + quiet + 1) * cell +
+             '" width="' + 5 * cell + '" height="' + 5 * cell + '" fill="#FFFFFF"/>' +
+             '<rect x="' + (ox + quiet + 2) * cell + '" y="' + (oy + quiet + 2) * cell +
+             '" width="' + 3 * cell + '" height="' + 3 * cell + '" fill="#2B2825"/>';
+    }
+    body += finder(0, 0) + finder(N - 7, 0) + finder(0, N - 7);
+
+    var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="' + size + '" height="' + size +
+      '" viewBox="0 0 ' + size + ' ' + size + '">' +
+      '<rect width="' + size + '" height="' + size + '" fill="#FFFFFF"/>' + body + '</svg>';
+    return "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
+  }
+
+  /* ===== 图片工具 ===== */
+  function loadImg(src) {
+    return new Promise(function (res) {
+      var im = new Image();
+      im.onload = function () { res(im); };
+      im.onerror = function () { res(null); };
+      im.src = src;
+    });
+  }
+  function saveImage(dataUrl, filename) {
+    try {
+      var a = document.createElement("a");
+      a.href = dataUrl; a.download = filename;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      return true;
+    } catch (e) { return false; }
+  }
+  /* ===== 上传文件转可持久化数据：图片压缩存 dataURL，视频按大小取舍 ===== */
+  function readFileAsDataURL(file) {
+    return new Promise(function (res, rej) {
+      var fr = new FileReader();
+      fr.onload = function () { res(fr.result); };
+      fr.onerror = function () { rej(fr.error); };
+      fr.readAsDataURL(file);
+    });
+  }
+  function compressImage(dataUrl) {
+    return loadImg(dataUrl).then(function (im) {
+      if (!im) return { media: dataUrl, type: "image", temp: false };
+      var max = 1080;
+      var s = Math.min(1, max / Math.max(im.width, im.height));
+      if (s === 1 && dataUrl.length < 500 * 1024) return { media: dataUrl, type: "image", temp: false };
+      try {
+        var cv = document.createElement("canvas");
+        cv.width = Math.round(im.width * s);
+        cv.height = Math.round(im.height * s);
+        cv.getContext("2d").drawImage(im, 0, 0, cv.width, cv.height);
+        return { media: cv.toDataURL("image/jpeg", 0.82), type: "image", temp: false };
+      } catch (e) { return { media: dataUrl, type: "image", temp: false }; }
+    });
+  }
+  function fileToStorable(file) {
+    var isVid = file.type.indexOf("video") === 0;
+    return readFileAsDataURL(file).then(function (url) {
+      if (isVid) {
+        if (file.size <= 1.5 * 1024 * 1024) return { media: url, type: "video", temp: false };
+        return { media: URL.createObjectURL(file), type: "video", temp: true };
+      }
+      return compressImage(url);
+    });
+  }
+
+  /* ===== 上传图片后确定「展示范围」：拖动移位 + 缩放，框内即前台画面 ===== */
+  var CROP_RATIOS = [
+    { k: "3:4", w: 3, h: 4 }, { k: "1:1", w: 1, h: 1 },
+    { k: "4:3", w: 4, h: 3 }, { k: "16:9", w: 16, h: 9 }
+  ];
+  function openCropSheet(src, cb) {
+    loadImg(src).then(function (im) {
+      var iw = (im && (im.naturalWidth || im.width)) || 0;
+      var ih = (im && (im.naturalHeight || im.height)) || 0;
+      if (!im || !iw || !ih) { toast("图片加载失败，无法裁剪", true); return; }
+
+      var st = { s: 1, tx: 0, ty: 0 }, ratio = CROP_RATIOS[0], base = 1, W = 0, H = 0;
+
+      openSheet(
+        '<div class="sheet-head"><div class="sheet-title">调整展示范围</div>' +
+        '<button class="sheet-close" id="crClose">关闭</button></div>' +
+        '<div class="crop-ratios" id="crRatios">' +
+          CROP_RATIOS.map(function (r, i) {
+            return '<button class="filter-item' + (i === 0 ? " on" : "") + '" data-cr="' + i + '">' + r.k + '</button>';
+          }).join("") + '</div>' +
+        '<div class="crop-stage" id="crStage"><img id="crImg" src="' + escapeAttr(src) + '" alt=""></div>' +
+        '<div class="crop-slider"><span>缩放</span>' +
+        '<input type="range" id="crScale" min="100" max="400" value="100">' +
+        '<span id="crVal">1.0×</span></div>' +
+        '<div class="crop-actions"><button class="btn btn-ghost" id="crReset">重置</button>' +
+        '<button class="btn btn-primary" id="crOk">使用这个范围</button></div>' +
+        '<p class="section-desc" style="margin-top:14px">拖动照片调整位置，用滑块或双指缩放。' +
+        '框内就是前台展示出来的画面，框外的部分会被裁掉。</p>'
+      );
+
+      var stage = $("crStage"), imgEl = $("crImg"), slider = $("crScale"), valEl = $("crVal");
+      stage.style.aspectRatio = ratio.w + " / " + ratio.h;
+
+      function measure() {
+        var r = stage.getBoundingClientRect();
+        W = r.width; H = r.height;
+        base = Math.max(W / iw, H / ih);
+      }
+      function clamp() {
+        st.s = Math.max(1, Math.min(4, st.s));
+        var mx = Math.max(0, (iw * base * st.s - W) / 2);
+        var my = Math.max(0, (ih * base * st.s - H) / 2);
+        st.tx = Math.max(-mx, Math.min(mx, st.tx));
+        st.ty = Math.max(-my, Math.min(my, st.ty));
+      }
+      function apply() {
+        clamp();
+        var bw = iw * base, bh = ih * base;
+        imgEl.style.width = bw + "px"; imgEl.style.height = bh + "px";
+        imgEl.style.left = ((W - bw) / 2) + "px"; imgEl.style.top = ((H - bh) / 2) + "px";
+        imgEl.style.transform = "translate(" + st.tx + "px," + st.ty + "px) scale(" + st.s + ")";
+        slider.value = Math.round(st.s * 100);
+        valEl.textContent = st.s.toFixed(1) + "×";
+      }
+      function setRatio(i) {
+        ratio = CROP_RATIOS[i];
+        stage.style.aspectRatio = ratio.w + " / " + ratio.h;
+        Array.prototype.forEach.call($("crRatios").querySelectorAll("[data-cr]"), function (b) {
+          b.classList.toggle("on", b.getAttribute("data-cr") === String(i));
+        });
+        st.s = 1; st.tx = 0; st.ty = 0;
+        requestAnimationFrame(function () { measure(); apply(); });
+      }
+      Array.prototype.forEach.call($("crRatios").querySelectorAll("[data-cr]"), function (b) {
+        b.onclick = function () { setRatio(parseInt(b.getAttribute("data-cr"), 10)); };
+      });
+
+      /* 拖动移位 + 双指缩放 */
+      var pts = {}, last = null, startDist = 0, startS = 1;
+      function gap() {
+        var ks = Object.keys(pts);
+        if (ks.length < 2) return 0;
+        var a = pts[ks[0]], b = pts[ks[1]];
+        return Math.sqrt((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y)) || 1;
+      }
+      stage.addEventListener("pointerdown", function (e) {
+        if (stage.setPointerCapture) { try { stage.setPointerCapture(e.pointerId); } catch (err) {} }
+        pts[e.pointerId] = { x: e.clientX, y: e.clientY };
+        if (Object.keys(pts).length === 2) { startDist = gap(); startS = st.s; last = null; }
+        else last = { x: e.clientX, y: e.clientY };
+      });
+      stage.addEventListener("pointermove", function (e) {
+        if (!pts[e.pointerId]) return;
+        pts[e.pointerId] = { x: e.clientX, y: e.clientY };
+        if (Object.keys(pts).length >= 2 && startDist) {
+          st.s = startS * (gap() / startDist); apply(); return;
+        }
+        if (last) {
+          st.tx += e.clientX - last.x; st.ty += e.clientY - last.y;
+          last = { x: e.clientX, y: e.clientY }; apply();
+        }
+      });
+      ["pointerup", "pointercancel", "pointerleave"].forEach(function (ev) {
+        stage.addEventListener(ev, function (e) {
+          delete pts[e.pointerId];
+          if (Object.keys(pts).length < 2) startDist = 0;
+          last = null;
+        });
+      });
+      stage.addEventListener("wheel", function (e) {
+        e.preventDefault();
+        st.s += (e.deltaY > 0 ? -0.08 : 0.08); apply();
+      }, { passive: false });
+
+      slider.oninput = function () { st.s = Number(slider.value) / 100; apply(); };
+      $("crReset").onclick = function () { st.s = 1; st.tx = 0; st.ty = 0; apply(); };
+      $("crClose").onclick = closeSheet;
+      $("crOk").onclick = function () {
+        clamp();
+        var k = base * st.s;
+        var sw = W / k, sh = H / k;
+        var sx = (iw * base * st.s / 2 - W / 2 - st.tx) / k;
+        var sy = (ih * base * st.s / 2 - H / 2 - st.ty) / k;
+        sx = Math.max(0, Math.min(iw - sw, sx));
+        sy = Math.max(0, Math.min(ih - sh, sy));
+        var long = 1080;
+        var outW = ratio.w >= ratio.h ? long : Math.round(long * ratio.w / ratio.h);
+        var outH = ratio.w >= ratio.h ? Math.round(long * ratio.h / ratio.w) : long;
+        try {
+          var cv = document.createElement("canvas");
+          cv.width = outW; cv.height = outH;
+          var c = cv.getContext("2d");
+          c.fillStyle = "#F6F4F0"; c.fillRect(0, 0, outW, outH);
+          c.drawImage(im, sx, sy, sw, sh, 0, 0, outW, outH);
+          var out = cv.toDataURL("image/jpeg", 0.82);   /* 与上传压缩一致，控制体积 */
+          closeSheet();
+          cb(out);
+        } catch (e) { toast("裁剪失败，请重试", true); }
+      };
+
+      requestAnimationFrame(function () { measure(); apply(); });
+    });
+  }
+
+  /* SVG 占位码转 PNG，便于直接存入相册 */
+  function qrToPNG(src) {
+    return loadImg(src).then(function (im) {
+      if (!im) return null;
+      try {
+        var cv = document.createElement("canvas");
+        cv.width = 600; cv.height = 600;
+        var c = cv.getContext("2d");
+        c.fillStyle = "#FFFFFF"; c.fillRect(0, 0, 600, 600);
+        c.drawImage(im, 0, 0, 600, 600);
+        return cv.toDataURL("image/png");
+      } catch (e) { return null; }
+    });
+  }
+
+  /* ===== 生成「画册快照」海报（含品牌、主图与二维码） ===== */
+  function buildSnapshot() {
+    var W = 750, H = 1334;
+    var cv = document.createElement("canvas");
+    cv.width = W; cv.height = H;
+    var c = cv.getContext("2d");
+    var sans = "'PingFang SC','Noto Sans SC','Microsoft YaHei',sans-serif";
+    var serif = "'Noto Serif SC','Songti SC',serif";
+
+    c.fillStyle = "#F6F4F0"; c.fillRect(0, 0, W, H);
+    c.textAlign = "center";
+    c.fillStyle = "#2B2825";
+    c.font = "600 42px " + serif;
+    c.fillText("潇潇时尚", W / 2, 118);
+    c.fillStyle = "#B8A48C";
+    c.font = "18px " + sans;
+    c.fillText("XIAOXIAO ATELIER", W / 2, 156);
+    c.strokeStyle = "#DCD6CC"; c.lineWidth = 1;
+    c.beginPath(); c.moveTo(275, 186); c.lineTo(475, 186); c.stroke();
+
+    var shot = currentShot();
+
+    return Promise.all([loadImg(shot.img), loadImg(QR_LIBRARY[qrIndex].media)]).then(function (arr) {
+      var main = arr[0], qr = arr[1];
+      var px = 90, py = 226, pw = 570, ph = 700;
+      c.fillStyle = "#EAE6DF"; c.fillRect(px, py, pw, ph);
+      if (main) {
+        var s = Math.max(pw / main.width, ph / main.height);
+        var dw = main.width * s, dh = main.height * s;
+        c.drawImage(main, px + (pw - dw) / 2, py + (ph - dh) / 2, dw, dh);
+      }
+      c.fillStyle = "#2B2825";
+      c.font = "32px " + serif;
+      c.fillText(shot.title, W / 2, py + ph + 66);
+      if (shot.sub) {
+        c.fillStyle = "#6E675F";
+        c.font = "20px " + sans;
+        c.fillText(shot.sub, W / 2, py + ph + 104);
+      }
+
+      var qs = 150, qx = W / 2 - qs / 2, qy = H - 250;
+      c.fillStyle = "#FFFFFF"; c.fillRect(qx, qy, qs, qs);
+      if (qr) c.drawImage(qr, qx, qy, qs, qs);
+      c.fillStyle = "#2B2825";
+      c.font = "22px " + sans;
+      c.fillText("保存图片并联系店家", W / 2, qy + qs + 46);
+      c.fillStyle = "#9A9188";
+      c.font = "16px " + sans;
+      c.fillText("长按识别二维码 · " + QR_LIBRARY[qrIndex].name, W / 2, qy + qs + 80);
+
+      try { return cv.toDataURL("image/png"); }
+      catch (e) { return null; }
+    });
+  }
+
+  /* 快照取图：优先当前正在浏览的单品，其次第一张形象片 */
+  function currentShot() {
+    if ($("viewer").classList.contains("open") && state.viewerList.length) {
+      var g = state.viewerList[state.viewerIndex];
+      return { img: g.media, title: g.name || "本期新品", sub: [g.category, g.desc].filter(Boolean).join(" · ") };
+    }
+    var f = sectionData.films[0];
+    return { img: f ? f.media : "", title: "形象片系列", sub: "Image of Xiaoxiao" };
+  }
+
+  /* ===== 二维码弹窗 ===== */
+  var qrIndex = 0;
+  var QR_SAVE_KEY = "xx_qr_saved";
+
+  function fmtTime(ts) {
+    var d = new Date(ts);
+    function p(n) { return (n < 10 ? "0" : "") + n; }
+    return (d.getMonth() + 1) + "-" + p(d.getDate()) + " " + p(d.getHours()) + ":" + p(d.getMinutes());
+  }
+  /* wechatOnly = true 时只展示微信客服码，并隐藏切换标签 */
+  function renderQR(wechatOnly) {
+    if (wechatOnly) {
+      for (var k = 0; k < QR_LIBRARY.length; k++) {
+        if (QR_LIBRARY[k].id === "wechat") qrIndex = k;
+      }
+    }
+    var qr = QR_LIBRARY[qrIndex];
+    $("qrTitle").textContent = wechatOnly ? "扫码联系店家" : "联系店家";
+    $("qrImg").innerHTML = '<img src="' + escapeAttr(qr.media) + '" alt="' + escapeAttr(qr.name) + '">';
+    $("qrDesc").textContent = qr.desc;
+    $("qrTabs").style.display = wechatOnly ? "none" : "";
+    $("qrTabs").innerHTML = QR_LIBRARY.map(function (q, i) {
+      return '<button class="qr-tab' + (i === qrIndex ? " on" : "") + '" data-i="' + i + '">' + escapeHtml(q.name) + '</button>';
+    }).join("");
+    Array.prototype.forEach.call($("qrTabs").children, function (b) {
+      b.onclick = function () { qrIndex = parseInt(b.getAttribute("data-i"), 10) || 0; renderQR(false); };
+    });
+    var log = readJSON(QR_SAVE_KEY, []);
+    $("qrMeta").textContent = log.length
+      ? "保存库已存 " + log.length + " 张 · 最近 " + fmtTime(log[0].at)
+      : "保存库暂无记录";
+  }
+  function openQR(wechatOnly) { renderQR(!!wechatOnly); $("qrmask").classList.add("open"); }
+  function closeQR() { $("qrmask").classList.remove("open"); }
+
+  /* 联系店家里的「门店地图」入口：有可导航地址才显示 */
+  function renderMapEntry() {
+    var row = $("qrMapRow");
+    if (!row) return;
+    var n = mapList().length;
+    row.hidden = !n;
+    if (n) $("qrMap").textContent = n > 1 ? "门店地图（" + n + " 家）" : "门店地图与导航";
+  }
+  function mapList() {
+    return addresses.filter(function (a) { return a.addr || hasLatLng(a); });
+  }
+  function openMapSheet() {
+    var list = mapList();
+    if (!list.length) { toast("还没有可导航的地址", true); return; }
+    var rows = list.map(function (a, i) {
+      return '<div class="map-item" data-mi="' + i + '">' +
+        '<div class="map-name">' + escapeHtml(a.name || "门店") + '</div>' +
+        '<div class="map-addr">' + escapeHtml(a.addr || "（仅有经纬度）") + '</div>' +
+        (a.note ? '<div class="map-note">' + escapeHtml(a.note) + '</div>' : '') +
+        '<div class="map-go">' + (hasLatLng(a) ? "在地图中打开 ›" : "搜索这个地址 ›") + '</div></div>';
+    }).join("");
+    openSheet(
+      '<div class="sheet-head"><div class="sheet-title">门店地图</div>' +
+      '<button class="sheet-close" id="mpClose">关闭</button></div>' +
+      '<div class="map-list">' + rows + '</div>' +
+      '<p class="section-desc" style="margin-top:16px">点击任一门店会唤起地图' +
+      '（装了高德 App 会直接打开，否则用网页版）。地址由管理员在「管理后台 · 地址管理」维护。</p>'
+    );
+    $("mpClose").onclick = closeSheet;
+    Array.prototype.forEach.call($("sheetPanel").querySelectorAll("[data-mi]"), function (el) {
+      el.onclick = function () { openMap(list[parseInt(el.getAttribute("data-mi"), 10)]); };
+    });
+  }
+
+  function bindFab() {
+    /* ① 联系店家：只弹出微信二维码，不保存任何图片 */
+    $("fabBtn").addEventListener("click", function () {
+      openQR(true);
+    });
+
+    /* ② 保存截屏：生成画册截屏并保存到本地，不再弹二维码 */
+    $("fabShot").addEventListener("click", function () {
+      toast("正在生成截屏…");
+      buildSnapshot().then(function (url) {
+        if (url) {
+          saveImage(url, "xiaoxiao-lookbook.png");
+          toast("已保存截屏，可在下载 / 相册查看");
+        } else {
+          toast("截屏生成失败，可改用「联系店家」保存二维码", true);
+        }
+      });
+    });
+
+    $("qrClose").addEventListener("click", closeQR);
+    $("qrmask").addEventListener("click", function (e) { if (e.target === $("qrmask")) closeQR(); });
+
+    /* 门店地图：数据来自管理后台的「地址管理」 */
+    $("qrMap").addEventListener("click", openMapSheet);
+    renderMapEntry();
+
+    /* 页脚链接的图片弹窗 */
+    $("imgClose").addEventListener("click", function () { $("imgmask").classList.remove("open"); });
+    $("imgmask").addEventListener("click", function (e) { if (e.target === $("imgmask")) $("imgmask").classList.remove("open"); });
+
+    $("qrSave").addEventListener("click", function () {
+      var qr = QR_LIBRARY[qrIndex];
+      qrToPNG(qr.media).then(function (png) {
+        var ok = saveImage(png || qr.media, "xiaoxiao-" + qr.id + ".png");
+        var log = readJSON(QR_SAVE_KEY, []);
+        log.unshift({ id: qr.id, name: qr.name, at: Date.now() });
+        writeJSON(QR_SAVE_KEY, log.slice(0, 30));
+        renderQR();
+        toast(ok ? "已存入保存库，可长按图片存入相册" : "请长按二维码保存到相册");
+      });
+    });
+  }
+
+  /* ===== 导航锚点 ===== */
+  function bindNav() {
+    document.querySelectorAll(".nav-item").forEach(function (it) {
+      it.addEventListener("click", function () {
+        var f = it.getAttribute("data-filter");
+        document.querySelectorAll(".nav-item").forEach(function (x) { x.classList.remove("active"); });
+        it.classList.add("active");
+        var target = { film: "sectionFilm", space: "sectionSpace", new: "sectionNew", series: "sectionSeries", store: "sectionStore" }[f];
+        if (target) $(target).scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    });
+  }
+
+  /* ===== 浏览层 ===== */
+  function openViewer(list, index) {
+    state.viewerList = list || []; state.viewerIndex = index || 0;
+    renderViewer(); $("viewer").classList.add("open"); document.body.style.overflow = "hidden";
+  }
+  function closeViewer() { $("viewer").classList.remove("open"); document.body.style.overflow = ""; $("viewerMedia").innerHTML = ""; }
+  function renderViewer() {
+    var list = state.viewerList; if (!list.length) return;
+    var i = (state.viewerIndex + list.length) % list.length; state.viewerIndex = i;
+    var g = list[i];
+    $("viewerCount").textContent = (i + 1) + " / " + list.length;
+    $("viewerName").textContent = g.name;
+    $("viewerMeta").textContent = (g.category || "") + (g.desc ? " · " + g.desc : "");
+    $("viewerDesc").textContent = g.detail || g.desc || "";
+    var wrap = $("viewerMedia"); wrap.innerHTML = "";
+    if (g.type === "video") {
+      var v = document.createElement("video"); v.src = g.media; v.controls = true; v.muted = true;
+      v.setAttribute("playsinline", ""); v.setAttribute("muted", ""); v.setAttribute("controls", ""); wrap.appendChild(v);
+    } else {
+      var img = document.createElement("img"); img.src = g.media; img.alt = g.name; wrap.appendChild(img);
+    }
+    var favBtn = $("btnFav"); var isFav = state.favorites.indexOf(g.id) !== -1;
+    favBtn.textContent = isFav ? "已收藏" : "收藏"; favBtn.classList.toggle("faved", isFav);
+    favBtn.onclick = function () {
+      var idx = state.favorites.indexOf(g.id);
+      if (idx === -1) { state.favorites.push(g.id); toast("已收藏"); } else { state.favorites.splice(idx, 1); toast("已取消收藏"); }
+      persistFavorites(); renderViewer();
+    };
+  }
+  function bindViewer() {
+    $("viewerClose").addEventListener("click", closeViewer);
+    $("btnViewerClose2").addEventListener("click", closeViewer);
+    $("viewerPrev").addEventListener("click", function () { state.viewerIndex = (state.viewerIndex - 1 + state.viewerList.length) % state.viewerList.length; renderViewer(); });
+    $("viewerNext").addEventListener("click", function () { state.viewerIndex = (state.viewerIndex + 1) % state.viewerList.length; renderViewer(); });
+    var startX = 0, startY = 0, tracking = false;
+    var stage = $("viewerStage");
+    stage.addEventListener("touchstart", function (e) { if (e.touches.length !== 1) return; startX = e.touches[0].clientX; startY = e.touches[0].clientY; tracking = true; }, { passive: true });
+    stage.addEventListener("touchend", function (e) {
+      if (!tracking) return; tracking = false;
+      var t = e.changedTouches[0]; var dx = t.clientX - startX, dy = t.clientY - startY;
+      if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) {
+        if (dx < 0) state.viewerIndex = (state.viewerIndex + 1) % state.viewerList.length;
+        else state.viewerIndex = (state.viewerIndex - 1 + state.viewerList.length) % state.viewerList.length;
+        renderViewer();
+      }
+    }, { passive: true });
+    document.addEventListener("keydown", function (e) {
+      if (!$("viewer").classList.contains("open")) return;
+      if (e.key === "Escape") closeViewer();
+      if (e.key === "ArrowLeft") { state.viewerIndex = (state.viewerIndex - 1 + state.viewerList.length) % state.viewerList.length; renderViewer(); }
+      if (e.key === "ArrowRight") { state.viewerIndex = (state.viewerIndex + 1) % state.viewerList.length; renderViewer(); }
+    });
+  }
+
+  /* ===== 抽屉 ===== */
+  /* 每次重绘抽屉都回到顶部，避免操作后停在列表中段 */
+  function openSheet(html) {
+    var p = $("sheetPanel");
+    p.innerHTML = html;
+    p.scrollTop = 0;
+    $("sheet").classList.add("open");
+    document.body.style.overflow = "hidden";
+  }
+  function closeSheet() { $("sheet").classList.remove("open"); $("sheetPanel").innerHTML = ""; document.body.style.overflow = ""; }
+  function bindSheetClose() { $("sheet").addEventListener("click", function (e) { if (e.target === $("sheet")) closeSheet(); }); }
+
+  /* ===== 管理员登录：仅管理员可进入，用于手机端维护页面 ===== */
+  /* ============================================================
+   * 本机演示凭据：接口不可用（本地预览 / 离线）时才用
+   * 只存「随机盐 + 哈希」，不存明文；仓库里也搜不到任何密码
+   * ============================================================ */
+  function localCred() { return readJSON(STORAGE.localcred, null); }
+  function randomSalt() {
+    var arr = new Uint8Array(16), i;
+    if (window.crypto && crypto.getRandomValues) crypto.getRandomValues(arr);
+    else for (i = 0; i < arr.length; i++) arr[i] = Math.floor(Math.random() * 256);
+    return Array.prototype.map.call(arr, function (b) { return ("0" + b.toString(16)).slice(-2); }).join("");
+  }
+  function localHash(pass, salt) {
+    var src = salt + ":" + pass;
+    if (window.crypto && crypto.subtle && crypto.subtle.digest) {
+      return crypto.subtle.digest("SHA-256", new TextEncoder().encode(src)).then(function (buf) {
+        return Array.prototype.map.call(new Uint8Array(buf), function (b) {
+          return ("0" + b.toString(16)).slice(-2);
+        }).join("");
+      });
+    }
+    /* 非安全上下文（file:// 直接打开）降级：多轮混合，仍不可逆，但强度低于 SHA-256 */
+    var h1 = 2166136261, h2 = 5381, out, r;
+    for (var i = 0; i < src.length; i++) {
+      h1 = ((h1 ^ src.charCodeAt(i)) * 16777619) >>> 0;
+      h2 = (((h2 * 33) ^ src.charCodeAt(i))) >>> 0;
+    }
+    out = ("0000000" + h1.toString(16)).slice(-8) + ("0000000" + h2.toString(16)).slice(-8);
+    for (r = 0; r < 2000; r++) {
+      out = (("0000000" + (((parseInt(out.slice(0, 8), 16) ^ (r * 2654435761)) * 16777619) >>> 0).toString(16))).slice(-8) +
+        (("0000000" + (((parseInt(out.slice(8, 16), 16) ^ r) * 2246822519) >>> 0).toString(16))).slice(-8);
+    }
+    return Promise.resolve(out);
+  }
+  function setLocalPass(pass) {
+    var salt = randomSalt();
+    return localHash(pass, salt).then(function (hash) {
+      writeJSON(STORAGE.localcred, { salt: salt, hash: hash });
+      return true;
+    });
+  }
+  function checkLocalPass(pass) {
+    var c = localCred();
+    if (!c || !c.salt || !c.hash) return Promise.resolve(false);
+    return localHash(pass, c.salt).then(function (h) { return h === c.hash; });
+  }
+
+  /* 设置 / 输入本机演示密码（仅离线兜底用） */
+  function openLocalPassSheet(mode, onOk) {
+    var isSetup = mode === "setup";
+    openSheet(
+      '<div class="sheet-head"><div class="sheet-title">' + (isSetup ? "设置本机演示密码" : "本机演示登录") +
+      '</div><button class="sheet-close" id="lpClose">关闭</button></div>' +
+      '<div class="form-group"><label class="form-label">密码</label>' +
+      '<input class="form-input" id="lpPass" type="password" maxlength="32" placeholder="至少 6 位" autocomplete="current-password"></div>' +
+      (isSetup ? '<div class="form-group"><label class="form-label">再输一次</label>' +
+        '<input class="form-input" id="lpPass2" type="password" maxlength="32" placeholder="确认密码" autocomplete="new-password"></div>' : '') +
+      '<div class="form-actions"><button class="btn btn-primary" id="lpOk">' + (isSetup ? "设置并登录" : "登录") + '</button></div>' +
+      '<p class="section-desc" style="margin-top:16px">服务端接口不可用时的兜底登录：' +
+      '只在本机生效，内容不会同步到线上，密码以哈希形式存在本机。</p>'
+    );
+    $("lpClose").onclick = closeSheet;
+    ["lpPass", "lpPass2"].forEach(function (id) {
+      if ($(id)) $(id).addEventListener("keydown", function (e) { if (e.key === "Enter") $("lpOk").click(); });
+    });
+    $("lpOk").onclick = function () {
+      var p = ($("lpPass").value || "").trim();
+      if (p.length < 6) { toast("密码至少 6 位", true); return; }
+      if (isSetup) {
+        if (p !== ($("lpPass2").value || "").trim()) { toast("两次输入的密码不一致", true); return; }
+        setLocalPass(p).then(function () { closeSheet(); onOk(); });
+        return;
+      }
+      checkLocalPass(p).then(function (okPass) {
+        if (!okPass) { toast("密码不正确", true); return; }
+        closeSheet(); onOk();
+      });
+    };
+  }
+
+  function openAuthSheet() {
+    var html =
+      '<div class="sheet-head"><div class="sheet-title">管理员登录</div><button class="sheet-close" id="authClose">关闭</button></div>' +
+      '<div class="form-group"><label class="form-label">管理员账号</label>' +
+      '<input class="form-input" id="authUser" placeholder="请输入管理员账号" maxlength="20" ' +
+      'autocomplete="username" autocapitalize="off" autocorrect="off" spellcheck="false"></div>' +
+      '<div class="form-group"><label class="form-label">密码</label>' +
+      '<input class="form-input" id="authPass" type="password" placeholder="请输入管理员密码" maxlength="32" ' +
+      'autocomplete="current-password"></div>' +
+      '<div class="form-actions"><button class="btn btn-primary" id="authSubmit">登录</button></div>' +
+      '<div style="margin-top:12px"><button class="btn btn-ghost btn-sm" id="authForgot" style="width:100%">' +
+      '忘记密码？用管理员邮箱重置</button></div>' +
+      '<p class="section-desc" style="margin-top:16px">本入口仅供管理员在手机上维护页面内容：' +
+      '登录后可在各区块点「编辑」，上传替换图片、修改名称与文案，或删除条目。</p>';
+    openSheet(html);
+    $("authClose").onclick = closeSheet;
+    $("authForgot").onclick = openForgotSheet;
+
+    function fail(msg) { toast(msg, true); $("authSubmit").disabled = false; }
+    function ok(username, token, tip, exp) {
+      state.session = { username: username, token: token, role: "admin", exp: exp || 0 };
+      persistSession(); renderAccountEntry(); closeSheet();
+      toast(tip); openAccountSheet();
+    }
+    /* 服务端不可用 → 用本机演示凭据（没有就先设置一个） */
+    function offlineLogin() {
+      $("authSubmit").disabled = false;
+      var has = !!(localCred() && localCred().hash);
+      openLocalPassSheet(has ? "login" : "setup", function () {
+        ok("本机演示", "local_" + uid("tk"), has ? "本机演示已登录（内容不同步）" : "本机演示密码已设置", 0);
+      });
+    }
+
+    $("authSubmit").onclick = function () {
+      var u = ($("authUser").value || "").trim(), p = ($("authPass").value || "").trim();
+      if (!u) { fail("请输入管理员账号"); return; }
+      if (!p) { fail("请输入密码"); return; }
+      $("authSubmit").disabled = true;
+      apiAuth(u, p).then(function (data) {
+        if (!data || data.role !== "admin" || !data.token) throw new Error("服务端返回的凭据无效");
+        ok(data.username || u, data.token, "管理员已登录", data.exp || 0);
+      }).catch(function (err) {
+        if (err && err.offline) { offlineLogin(); return; }   /* 只有接口不可用才兜底 */
+        fail((err && err.message) || "登录失败");
+      });
+    };
+    /* 手机软键盘回车即登录 */
+    ["authUser", "authPass"].forEach(function (id) {
+      $(id).addEventListener("keydown", function (e) {
+        if (e.key === "Enter") $("authSubmit").click();
+      });
+    });
+  }
+
+  /* ============================================================
+   * 管理员内容编辑
+   * 可维护区块：本期新品 / 形象片 / 店铺空间 / 品牌系列 / 门店 / 商务联系 / 页脚链接
+   * 新品走 /api/garments（失败回退本地）；其余为站点配置：
+   *   门店、商务联系 → 本地 xx_sections
+   *   页脚链接      → 本地 xx_footer
+   * ============================================================ */
+  var SECTION_KEY = "xx_sections";
+  var sectionData = {
+    films: seedFilms, spaces: seedSpaces, series: seedSeries,
+    stores: seedStores, contacts: seedContacts
+  };
+  var adminTab = "garments";
+
+  /* 纯文字区块，不需要上传图片 */
+  var NO_MEDIA = { stores: true, contacts: true, inventory: true, addresses: true };
+  /* 图片可选：不传也能保存（页脚链接用，传了就点开弹图） */
+  var OPT_MEDIA = { links: true };
+
+  var TAB_LABEL = {
+    garments: "本期新品", films: "形象片", spaces: "店铺空间", series: "品牌系列",
+    stores: "门店", contacts: "商务联系", links: "页脚链接",
+    inventory: "库存管理", addresses: "地址管理", notice: "首页公告"
+  };
+  /* 各区块必填字段与提示语 */
+  var REQ_FIELD = {
+    garments: "name", films: "name", series: "name", spaces: "caption",
+    stores: "name", contacts: "value", links: "text", inventory: "gid", addresses: "name"
+  };
+  var REQ_MSG = {
+    garments: "请填写服装名称", films: "请填写名称", series: "请填写系列名称",
+    spaces: "请填写图注", stores: "请填写门店名称", contacts: "请填写内容",
+    links: "请填写显示名称", inventory: "请先选择商品", addresses: "请填写地点名称"
+  };
+  var FORMS = {
+    garments: [
+      { k: "name", label: "服装名称", type: "text", max: 30, ph: "例如：醋酸缎面衬衫" },
+      { k: "code", label: "货号（系列前缀-流水号，全站唯一）", type: "code" },
+      { k: "category", label: "分类", type: "select", optionsRef: "cats" },
+      { k: "series", label: "所属系列", type: "pick", optionsRef: "seriesObj" },
+      { k: "price", label: "价格（元，留空则不显示）", type: "number", max: 10, ph: "例如：1290" },
+      { k: "desc", label: "一句介绍", type: "text", max: 40, ph: "例如：垂坠感 · 米白" },
+      { k: "detail", label: "详细描述", type: "area", max: 300, ph: "面料、版型、适合场景…" }
+    ],
+    films: [
+      { k: "name", label: "名称", type: "text", max: 20, ph: "例如：晨雾" },
+      { k: "en", label: "英文名", type: "text", max: 30, ph: "例如：Morning Mist" }
+    ],
+    series: [
+      { k: "name", label: "系列名称", type: "text", max: 20, ph: "例如：晨雾系列" },
+      { k: "tag", label: "系列标签 ID（2 位，01-99）", type: "text", max: 2, ph: "02" },
+      { k: "en", label: "英文名", type: "text", max: 30, ph: "例如：Morning Mist" },
+      { k: "products", label: "关联商品", type: "assoc" }
+    ],
+    spaces: [
+      { k: "caption", label: "图注", type: "area", max: 120, ph: "描述这个空间的光线与陈列" }
+    ],
+    stores: [
+      { k: "name", label: "门店名称", type: "text", max: 30, ph: "例如：杭州城西银泰店" },
+      { k: "addr", label: "地址", type: "text", max: 60, ph: "例如：城西银泰城 3F" }
+    ],
+    contacts: [
+      { k: "label", label: "标签", type: "text", max: 40, ph: "例如：PR / Business Cooperation" },
+      { k: "value", label: "内容（邮箱 / 电话）", type: "text", max: 40, ph: "例如：hello@xiaoxiao.com" }
+    ],
+    inventory: [
+      { k: "gid", label: "商品", type: "pick", optionsRef: "garments" },
+      { k: "items", label: "尺码与数量（勾选尺码，再用 − ＋ 调数量）", type: "sizes" },
+      { k: "alert", label: "预警阈值（某尺码 ≤ 此值标红提醒）", type: "number", max: 8, ph: "3" },
+      { k: "status", label: "上架状态", type: "select", options: ["在售", "下架"] },
+      { k: "note", label: "备注", type: "text", max: 40, ph: "例如：杭州仓 · 补货中，预计 3 天到货" }
+    ],
+    addresses: [
+      { k: "name", label: "地点名称", type: "text", max: 24, ph: "例如：杭州城西银泰店" },
+      { k: "addr", label: "详细地址", type: "text", max: 60, ph: "填写后可在联系店家直接唤起地图导航" },
+      { k: "geo", label: "自动填充", type: "geo" },
+      { k: "lat", label: "纬度", type: "text", max: 12, ph: "例如：30.293600" },
+      { k: "lng", label: "经度", type: "text", max: 12, ph: "例如：120.083000" },
+      { k: "note", label: "到店提示", type: "text", max: 40, ph: "例如：地铁 2 号线丰潭路站 B 口" }
+    ],
+    links: [
+      { k: "text", label: "显示名称", type: "text", max: 20, ph: "例如：用户协议" },
+      { k: "url", label: "跳转链接（http 开头则直接打开；有图片时优先弹图）", type: "text", max: 200, ph: "https://…" },
+      { k: "content", label: "内页文案 / 二维码说明", type: "area", max: 800, ph: "留空则只显示上传的图片" }
+    ]
+  };
+
+  /* 门店 / 商务联系的种子数据没有 id，补一个，编辑与删除才能定位 */
+  function ensureIds(list, prefix) {
+    (list || []).forEach(function (it, i) { if (!it.id) it.id = prefix + "_" + i; });
+  }
+
+  function loadSections() {
+    var saved = readJSON(SECTION_KEY, null);
+    if (saved) {
+      ["films", "spaces", "series", "stores", "contacts"].forEach(function (k) {
+        if (Object.prototype.toString.call(saved[k]) === "[object Array]") sectionData[k] = saved[k];
+      });
+    }
+    ensureIds(sectionData.films, "f");
+    ensureIds(sectionData.spaces, "sp");
+    ensureIds(sectionData.series, "sr");
+    ensureIds(sectionData.stores, "st");
+    ensureIds(sectionData.contacts, "ct");
+  }
+  function persistSections() {
+    if (!writeJSON(SECTION_KEY, sectionData)) toast("本地存储空间不足，改动可能无法保存", true);
+    pushSiteConfig();
+  }
+
+  /* ============================================================
+   * 站点配置云端同步
+   * 门店 / 商务联系 / 页脚链接 / 形象片 / 店铺空间 / 品牌系列 / 分类
+   * 都归到一份配置里，写 /api/site-config，换设备也能看到同一份内容
+   * ============================================================ */
+  var CFG_KEYS = ["films", "spaces", "series", "stores", "contacts"];
+  var cfgTimer = null, cfgSuspend = false;
+
+  function siteConfig() {
+    var cfg = {
+      footer: footerLinks, categories: catData, sizes: sizeData,
+      general: generalCode, inventory: inventory, addresses: addresses,
+      seriestags: seriesTags, notice: siteNotice
+    };
+    CFG_KEYS.forEach(function (k) { cfg[k] = sectionData[k]; });
+    return cfg;
+  }
+  function applySiteConfig(cfg) {
+    if (!cfg || typeof cfg !== "object") return false;
+    var hit = false;
+    CFG_KEYS.forEach(function (k) {
+      if (Object.prototype.toString.call(cfg[k]) === "[object Array]") { sectionData[k] = cfg[k]; hit = true; }
+    });
+    if (Object.prototype.toString.call(cfg.footer) === "[object Array]") { footerLinks = cfg.footer; hit = true; }
+    if (Object.prototype.toString.call(cfg.categories) === "[object Array]" && cfg.categories.length) { catData = cfg.categories; hit = true; }
+    if (Object.prototype.toString.call(cfg.sizes) === "[object Array]" && cfg.sizes.length) { sizeData = cfg.sizes; hit = true; }
+    if (typeof cfg.general === "string" && cfg.general) { generalCode = cfg.general; hit = true; }
+    if (Object.prototype.toString.call(cfg.seriestags) === "[object Array]") { seriesTags = cfg.seriestags; hit = true; }
+    if (Object.prototype.toString.call(cfg.inventory) === "[object Array]") { inventory = cfg.inventory; normalizeInventory(); hit = true; }
+    if (Object.prototype.toString.call(cfg.addresses) === "[object Array]") {
+      addresses = cfg.addresses; ensureIds(addresses, "ad"); hit = true;
+    }
+    if (cfg.notice && typeof cfg.notice === "object") { siteNotice = cfg.notice; hit = true; }
+    if (hit) {
+      ensureIds(sectionData.films, "f");
+      ensureIds(sectionData.spaces, "sp");
+      ensureIds(sectionData.series, "sr");
+      ensureIds(sectionData.stores, "st");
+      ensureIds(sectionData.contacts, "ct");
+    }
+    return hit;
+  }
+  function pushSiteConfig() {
+    if (cfgSuspend || !isAdmin()) return;
+    clearTimeout(cfgTimer);
+    cfgTimer = setTimeout(function () {
+      apiSaveSiteConfig(siteConfig(), state.session.token)
+        .then(function () { toast("已同步到服务端"); })
+        .catch(function () { toast("已保存到本机，服务端同步失败", true); });
+    }, 400);
+  }
+  function pullSiteConfig() {
+    apiGetSiteConfig().then(function (cfg) {
+      if (!applySiteConfig(cfg)) return;
+      cfgSuspend = true;                          /* 拉取期间不要把同样的数据再推回去 */
+      ensureSeriesTags();
+      ensureSeriesLink();
+      ensureCodes();
+      persistSections(); persistFooter(); persistCats(); persistSizes(); persistInventory(); persistAddresses(); persistSeriesTags(); persistNotice();
+      clearTimeout(cfgTimer); cfgSuspend = false;
+      renderFilms(); renderSpaces(); renderSeries(); renderStores(); renderContacts();
+      renderFooter(); renderFilters(); renderGrid(); renderNotice(); renderMapEntry();
+    }).catch(function () {});
+  }
+
+  function getColl(key) {
+    if (key === "garments") return state.garments;
+    if (key === "links") return footerLinks;
+    if (key === "inventory") return inventory;
+    if (key === "addresses") return addresses;
+    return sectionData[key];
+  }
+  function setColl(key, list) {
+    if (key === "garments") { state.garments = list; persistGarments(); }
+    else if (key === "links") { footerLinks = list; persistFooter(); }
+    else if (key === "inventory") { inventory = list; persistInventory(); }
+    else if (key === "addresses") { addresses = list; persistAddresses(); }
+    else { sectionData[key] = list; persistSections(); }
+  }
+  function refreshColl(key) {
+    if (key === "garments") { renderGrid(); renderSeries(); }   /* 系列封面的「N 件单品」也要跟着变 */
+    else if (key === "films") renderFilms();
+    else if (key === "spaces") renderSpaces();
+    else if (key === "series") renderSeries();
+    else if (key === "stores") renderStores();
+    else if (key === "contacts") renderContacts();
+    else if (key === "links") renderFooter();
+    else if (key === "addresses") renderMapEntry();                   /* 联系店家里的「门店地图」按钮 */
+    else if (key === "inventory") { renderGrid(); renderSeries(); }   /* 卡片上的「缺货 / 仅剩 N 件」要跟着变 */
+  }
+  function titleOf(key, it) {
+    if (key === "inventory") return garmentName(it.gid);
+    return it.name || it.caption || it.text || it.value || "（未命名）";
+  }
+  function subOf(key, it) {
+    if (key === "inventory") {
+      var its = it.items || [], a = Number(it.alert) || 0;
+      var detail = its.map(function (x) { return x.sku + " " + (Number(x.stock) || 0); }).join(" · ");
+      var tot = its.reduce(function (s, x) { return s + (Number(x.stock) || 0); }, 0);
+      var tag = it.status === "下架" ? "已下架"
+        : (tot === 0 ? "缺货"
+          : (its.some(function (x) { var s = Number(x.stock) || 0; return s > 0 && s <= a; }) ? "有尺码低于预警" : "充足"));
+      return (detail ? detail + " · " : "") + "共 " + tot + " 件 · " + tag + (it.note ? " · " + it.note : "");
+    }
+    if (key === "garments") {
+      return (it.code ? "货号 " + it.code + " · " : "未编货号 · ") +
+        [it.category, it.desc].filter(Boolean).join(" · ") +
+        (it.type === "video" ? " · 视频" : " · 图片") +
+        " · " + (it.series || "未归系列");          /* 管理员一眼看出这件属于哪个系列 */
+    }
+    if (key === "spaces") return (it.caption || "").slice(0, 24);
+    if (key === "stores") return it.addr || "";
+    if (key === "contacts") return it.label || "";
+    if (key === "links") return it.url ? it.url.slice(0, 40) : (it.media ? "点击弹出图片" : "内页文案");
+    if (key === "addresses") {
+      return (it.addr || "未填地址") +
+        (hasLatLng(it) ? " · 已定位 " + it.lat + "," + it.lng : " · 无经纬度（按地址搜索）") +
+        (it.note ? " · " + it.note : "");
+    }
+    if (key === "series") {
+      var tg = tagOfSeries(it.id);
+      return (tg ? "标签 " + tg + " · " : "无标签 · ") +
+        (it.en || "") + " · 关联 " + countInSeries(it) + " 件商品";
+    }
+    return it.en || "";
+  }
+
+  function openAccountSheet() {
+    if (!isAdmin()) { openAuthSheet(); return; }
+    if (adminTab === "notice") { openNoticeSheet(); return; }   /* 公告是单条记录，走独立表单 */
+
+    var list = getColl(adminTab);
+
+    var rows = list.length ? list.map(function (it) {
+      var invTotal = (it.items || []).reduce(function (s, x) { return s + (Number(x.stock) || 0); }, 0);
+      var thumb = !it.media
+        ? '<span>' + (adminTab === "inventory" ? invTotal : "文") + '</span>'   /* 库存显示总件数，纯文字条目显示「文」 */
+        : (it.type === "video"
+          ? '<video src="' + escapeAttr(it.media) + '" muted playsinline preload="metadata"></video>'
+          : '<img src="' + escapeAttr(it.media) + '" alt="" loading="lazy">');
+      var act = '<div class="my-actions"><button class="btn btn-ghost btn-sm" data-edit="' + escapeAttr(it.id) + '">编辑</button>' +
+        '<button class="btn btn-ghost btn-sm" data-del="' + escapeAttr(it.id) + '">删除</button></div>';
+      return '<div class="my-item"><div class="my-thumb">' + thumb + '</div>' +
+        '<div class="my-info"><div class="my-name">' + escapeHtml(titleOf(adminTab, it)) + '</div>' +
+        '<div class="my-meta">' + escapeHtml(subOf(adminTab, it)) + '</div></div>' + act + '</div>';
+    }).join("") : '<div class="my-empty">还没有内容，点下方按钮新增</div>';
+
+    var tabsHtml = '<div class="qr-tabs" style="justify-content:flex-start;margin:0 0 20px">' +
+      Object.keys(TAB_LABEL).map(function (k) {
+        return '<button class="qr-tab' + (k === adminTab ? " on" : "") + '" data-tab="' + k + '">' + TAB_LABEL[k] + '</button>';
+      }).join("") + '</div>';
+
+    var catBtn = (adminTab === "garments")
+      ? '<div style="margin:0 0 20px"><button class="btn btn-outline btn-sm" id="accCats" style="width:100%">管理分类（' + catData.length + '）</button></div>'
+      : (adminTab === "inventory")
+      ? '<div style="margin:0 0 20px"><button class="btn btn-outline btn-sm" id="accSizes" style="width:100%">管理尺码（' + sizeData.length + '）</button></div>'
+      : '';
+
+    /* 库存概览：规格数 / 总件数 / 预警 / 缺货 */
+    var invSum = "";
+    if (adminTab === "inventory") {
+      var sm = inventorySummary();
+      invSum = '<div class="inv-sum">' +
+        '<span><b>' + sm.goods + '</b>个商品</span>' +
+        '<span><b>' + sm.total + '</b>件库存</span>' +
+        '<span class="' + (sm.low ? "warn" : "") + '"><b>' + sm.low + '</b>尺码低于预警</span>' +
+        '<span class="' + (sm.none ? "warn" : "") + '"><b>' + sm.none + '</b>尺码已缺货</span>' +
+        '</div>';
+    }
+
+    var html =
+      '<div class="sheet-head"><div class="sheet-title">管理面板</div><button class="sheet-close" id="accClose">关闭</button></div>' +
+      '<div class="account-head"><div><div class="account-user">' + escapeHtml(state.session.username) +
+      '<span class="role-badge">管理员</span></div>' +
+      '<div class="account-sub">' + TAB_LABEL[adminTab] + " · " + getColl(adminTab).length + ' 条</div></div>' +
+      '<button class="btn btn-ghost btn-sm" id="accLogout">退出登录</button></div>' +
+      tabsHtml + catBtn + invSum +
+      '<div class="my-list">' + rows + '</div>' +
+      '<div class="form-actions" style="margin-top:22px"><button class="btn btn-primary" id="accUpload">' +
+      (NO_MEDIA[adminTab] || OPT_MEDIA[adminTab] ? "新增条目" : "上传新内容") + '</button></div>' +
+      '<div class="form-actions" style="margin-top:12px"><button class="btn btn-outline" id="accPass" style="width:100%">' +
+      '修改管理员密码</button></div>' +
+      '<div class="account-mail" id="accMail"></div>' +
+      '<p class="section-desc" style="margin-top:16px">切换区块后可「编辑 / 删除 / 新增」。' +
+      '图片会自动压缩后持久化保存；新品优先写入云端接口，接口不可用时保存到本地。' +
+      '门店、商务联系、页脚链接、库存与公告会整体同步到 /api/site-config，换设备也能看到同一份内容。' +
+      '页脚链接上传图片后，访客点击该链接会弹出大图，可直接长按识别二维码。</p>';
+
+    openSheet(html);
+    $("accClose").onclick = closeSheet;
+    $("accLogout").onclick = function () { state.session = null; persistSession(); renderAccountEntry(); closeSheet(); toast("已退出登录"); };
+
+    var panel = $("sheetPanel");
+    $("accUpload").onclick = function () { openUploadSheet(null); };
+    if ($("accCats")) $("accCats").onclick = function () { openCatSheet(); };
+    if ($("accSizes")) $("accSizes").onclick = function () { openSizeSheet(); };
+    if ($("accPass")) {
+      $("accPass").onclick = function () {
+        var tk = String((state.session || {}).token || "");
+        if (tk.indexOf("v1.") !== 0) {                    /* 本机演示密码不存在云端，改不了 */
+          toast("本机演示模式：退出登录后重新设置即可", true);
+          return;
+        }
+        openChangePassSheet();
+      };
+    }
+    if ($("accMail")) {
+      apiAuthInfo().then(function (d) {
+        var box = $("accMail");
+        if (!d || !box) return;
+        box.textContent = d.hasEmail
+          ? "重置邮件将发送至 " + d.emailMask + "（完整地址仅服务端可见）"
+          : "未配置管理员邮箱，忘记密码时无法自助重置";
+      });
+    }
+
+    Array.prototype.forEach.call(panel.querySelectorAll("[data-tab]"), function (b) {
+      b.onclick = function () { adminTab = b.getAttribute("data-tab"); openAccountSheet(); };
+    });
+    Array.prototype.forEach.call(panel.querySelectorAll("[data-edit]"), function (b) {
+      b.onclick = function () {
+        var id = b.getAttribute("data-edit");
+        var hit = getColl(adminTab).filter(function (x) { return x.id === id; })[0];
+        if (hit) openUploadSheet(hit);
+      };
+    });
+    Array.prototype.forEach.call(panel.querySelectorAll("[data-del]"), function (b) {
+      b.onclick = function () { deleteItem(b.getAttribute("data-del")); };
+    });
+  }
+
+  /* ===== 分类管理：管理员自定义分类名称 ===== */
+  function openCatSheet() {
+    if (!isAdmin()) { openAuthSheet(); return; }
+
+    var rows = catData.length ? catData.map(function (c, i) {
+      return '<div class="my-item">' +
+        '<div class="my-info"><div class="my-name">' + escapeHtml(c) + '</div>' +
+        '<div class="my-meta">' + countInCat(c) + ' 件在用</div></div>' +
+        '<div class="my-actions">' +
+        '<button class="btn btn-ghost btn-sm" data-ren="' + i + '">改名</button>' +
+        '<button class="btn btn-ghost btn-sm" data-cdel="' + i + '">删除</button></div></div>';
+    }).join("") : '<div class="my-empty">还没有分类，在下方新增一个</div>';
+
+    var html =
+      '<div class="sheet-head"><div class="sheet-title">管理分类</div><button class="sheet-close" id="catClose">关闭</button></div>' +
+      '<div class="my-list">' + rows + '</div>' +
+      '<div class="form-group" style="margin-top:24px"><label class="form-label">新增分类</label>' +
+      '<input class="form-input" id="catNew" maxlength="10" placeholder="例如：半裙 / 风衣 / 配饰" ' +
+      'autocapitalize="off" autocorrect="off" spellcheck="false"></div>' +
+      '<div class="form-actions"><button class="btn btn-ghost" id="catBack">返回</button>' +
+      '<button class="btn btn-primary" id="catAdd">添加分类</button></div>' +
+      '<p class="section-desc" style="margin-top:16px">分类会同步显示在「本期新品」的筛选栏和上传表单里。' +
+      '改名会同步更新该分类下商品的归属；删除后这些商品仍保留，只是只在「全部」中可见。</p>';
+
+    openSheet(html);
+    $("catClose").onclick = closeSheet;
+    $("catBack").onclick = function () { openAccountSheet(); };
+
+    function addCat() {
+      var v = ($("catNew").value || "").trim();
+      if (!v) { toast("请输入分类名称", true); return; }
+      if (catData.indexOf(v) !== -1) { toast("该分类已存在", true); return; }
+      catData.push(v);
+      persistCats(); renderFilters();
+      toast("已添加分类"); openCatSheet();
+    }
+    $("catAdd").onclick = addCat;
+    $("catNew").addEventListener("keydown", function (e) { if (e.key === "Enter") addCat(); });
+
+    Array.prototype.forEach.call($("sheetPanel").querySelectorAll("[data-ren]"), function (b) {
+      b.onclick = function () {
+        var i = parseInt(b.getAttribute("data-ren"), 10);
+        var old = catData[i];
+        var nv = (window.prompt("把分类「" + old + "」改名为：", old) || "").trim();
+        if (!nv || nv === old) return;
+        if (catData.indexOf(nv) !== -1) { toast("已存在同名分类", true); return; }
+        catData[i] = nv;
+        state.garments = state.garments.map(function (g) { return g.category === old ? Object.assign({}, g, { category: nv }) : g; });
+        persistGarments();
+        if (state.filter === old) state.filter = nv;
+        persistCats(); renderFilters(); renderGrid();
+        toast("已改名为「" + nv + "」"); openCatSheet();
+      };
+    });
+
+    Array.prototype.forEach.call($("sheetPanel").querySelectorAll("[data-cdel]"), function (b) {
+      b.onclick = function () {
+        var i = parseInt(b.getAttribute("data-cdel"), 10);
+        var name = catData[i], n = countInCat(name);
+        var msg = n ? "「" + name + "」下有 " + n + " 件商品，删除后它们只在「全部」中可见。确定删除？" : "确定删除分类「" + name + "」？";
+        if (!window.confirm(msg)) return;
+        catData.splice(i, 1);
+        if (state.filter === name) state.filter = "all";
+        persistCats(); renderFilters(); renderGrid();
+        toast("已删除分类"); openCatSheet();
+      };
+    });
+  }
+
+  function deleteItem(id) {
+    var key = adminTab;
+    var hit = getColl(key).filter(function (x) { return x.id === id; })[0];
+    if (!hit) return;
+
+    var tip = "确定删除「" + titleOf(key, hit) + "」？删除后不可恢复。";
+    if (key === "series") {
+      var rel = countInSeries(hit);
+      if (rel) {
+        tip = "「" + hit.name + "」下关联了 " + rel + " 件商品，删除系列后这些商品会解绑" +
+          "（只在「全部」中可见，商品本身保留）。确定删除？";
+      }
+    }
+    if (!window.confirm(tip)) return;
+
+    function done(msg, isErr) {
+      if (key === "series") { unbindSeries(hit); removeSeriesTag(hit.id); }   /* 删系列 → 解绑商品 + 清标签 */
+      if (key === "garments") {                          /* 删商品 → 清掉它的库存记录 */
+        if (inventory.some(function (v) { return v.gid === id; })) {
+          setColl("inventory", inventory.filter(function (v) { return v.gid !== id; }));
+        }
+      }
+      setColl(key, getColl(key).filter(function (x) { return x.id !== id; }));
+      state.favorites = state.favorites.filter(function (f) { return f !== id; });
+      persistFavorites();
+      refreshColl(key);
+      toast(msg, isErr);
+      openAccountSheet();
+    }
+    if (key === "garments") {
+      apiDeleteGarment(id, state.session.token)
+        .then(function () { done("已删除（云端）", false); })
+        .catch(function () { done("接口不可用，已删除本地副本", true); });
+    } else {
+      done("已删除", false);
+    }
+  }
+
+  function toCount(v) {
+    var n = parseInt(v, 10);
+    return (isNaN(n) || n < 0) ? 0 : n;
+  }
+
+  function mediaPreview(it) {
+    if (!it || !it.media) return '<span class="ph">选择文件后在这里预览</span>';
+    return it.type === "video"
+      ? '<video src="' + escapeAttr(it.media) + '" muted playsinline controls></video>'
+      : '<img src="' + escapeAttr(it.media) + '" alt="">';
+  }
+  function showPreview(url, isVid) {
+    $("upPreview").innerHTML = isVid
+      ? '<video src="' + escapeAttr(url) + '" muted playsinline controls></video>'
+      : '<img src="' + escapeAttr(url) + '" alt="">';
+  }
+
+  /* ===== 扫码录入货号：调用后置摄像头识别条码 / 二维码 =====
+     用浏览器原生 BarcodeDetector（Chrome / Edge，需 HTTPS 或 localhost）；
+     不支持时退化成手动输入，不引入外部依赖。 */
+  function openScanSheet(onResult) {
+    var html =
+      '<div class="sheet-head"><div class="sheet-title">扫码录入货号</div>' +
+      '<button class="sheet-close" id="scClose">关闭</button></div>' +
+      '<div class="scan-box"><video id="scanVideo" autoplay playsinline muted></video>' +
+      '<span class="scan-frame"></span></div>' +
+      '<p class="section-desc" id="scanTip" style="margin:0 0 18px">把吊牌上的条码 / 二维码对准取景框</p>' +
+      '<div class="form-group"><label class="form-label">或手动输入 / 粘贴</label>' +
+      '<input class="form-input" id="scanManual" maxlength="40" placeholder="例如：00002-00001 或条码数字"></div>' +
+      '<div class="form-actions"><button class="btn btn-ghost" id="scCancel">取消</button>' +
+      '<button class="btn btn-primary" id="scUse">使用这个货号</button></div>';
+
+    openSheet(html);
+
+    var stream = null, raf = null, done = false;
+    function stop() {
+      done = true;
+      if (raf) { cancelAnimationFrame(raf); raf = null; }
+      if (stream) { stream.getTracks().forEach(function (t) { t.stop(); }); stream = null; }
+    }
+    function finish(v) { stop(); closeSheet(); onResult(v); }
+
+    $("scClose").onclick = function () { stop(); closeSheet(); };
+    $("scCancel").onclick = function () { stop(); closeSheet(); };
+    $("scUse").onclick = function () {
+      var v = ($("scanManual").value || "").trim();
+      if (!v) { toast("请输入货号或条码数字", true); return; }
+      finish(v);
+    };
+
+    if (typeof window.BarcodeDetector === "undefined") {
+      $("scanTip").textContent = "当前浏览器不支持自动识别（需 Chrome / Edge 且 HTTPS 访问）。请手动输入或粘贴条码数字。";
+      return;
+    }
+
+    var detector;
+    try { detector = new window.BarcodeDetector(); } catch (e) { detector = null; }
+    if (!detector) {
+      $("scanTip").textContent = "无法启用识别器，请手动输入或粘贴条码数字。";
+      return;
+    }
+
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
+      .then(function (s) {
+        stream = s;
+        var v = $("scanVideo");
+        v.srcObject = s;
+        return v.play();
+      })
+      .catch(function (e) {
+        $("scanTip").textContent = "摄像头打开失败：" + ((e && e.message) || "请检查权限") + "，可手动输入。";
+      });
+
+    function loop() {
+      if (done) return;
+      var v = $("scanVideo");
+      if (!v || v.readyState < 2) { raf = requestAnimationFrame(loop); return; }
+      detector.detect(v).then(function (codes) {
+        if (done) return;
+        if (codes && codes.length && codes[0].rawValue) { finish(codes[0].rawValue); return; }
+        raf = requestAnimationFrame(loop);
+      }).catch(function () { raf = requestAnimationFrame(loop); });
+    }
+    loop();
+  }
+
+  function openUploadSheet(editItem) {
+    if (!state.session) { openAuthSheet(); return; }
+    if (!isAdmin()) { toast("仅管理员可修改内容", true); return; }
+
+    var key = adminTab;
+    var isEdit = !!editItem;
+    var it = editItem || {};
+    /* 商品表单里「所属系列」的值是系列 id：编辑时取 sid，从系列页上新时取当前浏览的系列 */
+    if (key === "garments") {
+      var sid0 = it.sid || "";
+      if (!sid0 && it.series) {
+        var byName = sectionData.series.filter(function (s) { return s.name === it.series; })[0];
+        if (byName) sid0 = byName.id;
+      }
+      if (!isEdit && !sid0 && pendingSeries) sid0 = pendingSeries;
+      it = Object.assign({}, it, { series: sid0 });
+    }
+    /* 新建系列自动分配编号与标签 ID；新建商品的货号在渲染完成后按系列前缀生成 */
+    if (key === "series") {
+      var tag0 = isEdit ? tagOfSeries(it.id) : "";
+      it = Object.assign({}, it, {
+        tag: tag0 || nextSeriesTag(),
+        code: it.code || nextSeriesCode()
+      });
+    }
+    var fields = FORMS[key] || [];
+
+    var fieldsHtml = fields.map(function (f) {
+      var val = it[f.k] || "";
+      if (f.type === "geo") {
+        /* 地址管理专用：定位 / 地图选点，自动把经纬度和文字地址带进表单 */
+        return '<div class="form-group"><label class="form-label">' + f.label + '</label>' +
+          '<div class="geo-row">' +
+          '<button type="button" class="btn btn-outline btn-sm" id="btnLocate">用当前位置填充</button>' +
+          '<button type="button" class="btn btn-outline btn-sm" id="btnPick">从地图选点</button>' +
+          '</div>' +
+          '<p class="section-desc" style="margin-top:8px">「用当前位置填充」取手机 GPS；' +
+          '「从地图选点」跳高德选点页，选完回到本页自动带入名称和地址。' +
+          '配置高德 Web 服务 Key 后，经纬度还能反查成文字地址。</p></div>';
+      }
+      if (f.type === "code") {
+        /* 货号：输入框 + 扫码（吊牌条码 / 二维码） */
+        return '<div class="form-group"><label class="form-label">' + f.label + '</label>' +
+          '<div class="code-row">' +
+          '<input class="form-input" id="f_' + f.k + '" maxlength="24" ' +
+          'value="' + escapeAttr(val) + '" placeholder="例如：00002-00001">' +
+          '<button type="button" class="btn btn-outline btn-sm" id="btnScan">扫码</button>' +
+          '</div>' +
+          '<p class="section-desc" style="margin-top:8px">扫吊牌上的条码 / 二维码可自动填入；' +
+          '也可手动输入。格式：系列前缀-流水号（如 00002-00001），全站唯一。</p></div>';
+      }
+      if (f.type === "select") {
+        var opts = f.optionsRef === "cats" ? catData : (f.options || []);
+        if (val && opts.indexOf(val) === -1) opts = [val].concat(opts);   /* 保留历史值 */
+        return '<div class="form-group"><label class="form-label">' + f.label + '</label>' +
+          '<select class="form-select" id="f_' + f.k + '">' +
+          opts.map(function (o) {
+            return '<option value="' + escapeAttr(o) + '"' + (val === o ? " selected" : "") + '>' + escapeHtml(o) + '</option>';
+          }).join("") + '</select>' +
+          (f.optionsRef === "cats" ? '<p class="section-desc" style="margin-top:8px">分类可在「本期新品 · 管理分类」中增删改</p>' : '') +
+          '</div>';
+      }
+      if (f.type === "area") {
+        return '<div class="form-group"><label class="form-label">' + f.label + '</label>' +
+          '<textarea class="form-textarea" id="f_' + f.k + '" maxlength="' + (f.max || 200) +
+          '" placeholder="' + escapeAttr(f.ph || "") + '">' + escapeHtml(val) + '</textarea></div>';
+      }
+      if (f.type === "number") {
+        return '<div class="form-group"><label class="form-label">' + f.label + '</label>' +
+          '<input class="form-input" type="number" inputmode="numeric" min="0" step="1" ' +
+          'id="f_' + f.k + '" value="' + escapeAttr(val) + '" placeholder="' + escapeAttr(f.ph || "") + '"></div>';
+      }
+      if (f.type === "pick") {
+        /* 下拉：选项值与显示文字不同（如库存里选商品：值=id，文字=名称） */
+        var pairs;
+        if (f.optionsRef === "garments") {
+          pairs = state.garments.map(function (g) {
+            return { v: g.id, t: g.name + (g.code ? " · " + g.code : "") };
+          });
+        } else if (f.optionsRef === "seriesObj") {
+          /* 值 = 系列 id，显示系列名 + 标签 ID，另有一条「不归入系列」 */
+          pairs = [{ v: "", t: "（不归入系列）" }].concat(sectionData.series.map(function (s) {
+            var tg = tagOfSeries(s.id);
+            return { v: s.id, t: s.name + (tg ? " · 标签 " + tg : "") };
+          }));
+        } else {
+          pairs = (f.options || []).map(function (o) { return { v: o, t: o }; });
+        }
+        if (val && !pairs.some(function (o) { return o.v === val; })) {
+          pairs = [{ v: val, t: "（原选项已删除）" }].concat(pairs);
+        }
+        var ps = (f.optionsRef === "seriesObj" && !isEdit && pendingSeries) ? seriesById(pendingSeries) : null;
+        return '<div class="form-group"><label class="form-label">' + f.label + '</label>' +
+          '<select class="form-select" id="f_' + f.k + '">' +
+          pairs.map(function (o) {
+            return '<option value="' + escapeAttr(o.v) + '"' + (val === o.v ? " selected" : "") + '>' +
+              escapeHtml(o.t) + '</option>';
+          }).join("") + '</select>' +
+          (ps ? '<p class="section-desc" style="margin-top:8px">默认归入当前浏览的系列「' +
+            escapeHtml(ps.name) + '」，可自行更改</p>' : '') + '</div>';
+      }
+      if (f.type === "sizes") {
+        /* 尺码多选 + 每个尺码单独填数量：一行一个尺码，横向 − 数量 ＋ */
+        var cur = Object.prototype.toString.call(it.items) === "[object Array]" ? it.items : [];
+        var sizeRows = sizeData.map(function (sz) {
+          var hit2 = cur.filter(function (x) { return x.sku === sz; })[0];
+          var qty = hit2 ? (Number(hit2.stock) || 0) : 0;
+          return '<div class="size-row' + (hit2 ? " on" : "") + '" data-sz="' + escapeAttr(sz) + '">' +
+            '<input type="checkbox" class="size-cb"' + (hit2 ? " checked" : "") + '>' +
+            '<span class="size-name">' + escapeHtml(sz) + '</span>' +
+            '<div class="stepper">' +
+            '<button type="button" class="step-btn" data-step="-1">−</button>' +
+            '<input class="step-val" type="text" inputmode="numeric" pattern="[0-9]*" value="' + qty + '">' +
+            '<button type="button" class="step-btn" data-step="1">＋</button>' +
+            '</div></div>';
+        }).join("");
+        /* 记录里用了但尺码库里没有的尺码（如已删除尺码），也补进来避免丢数据 */
+        cur.forEach(function (x) {
+          if (sizeData.indexOf(x.sku) !== -1) return;
+          sizeRows += '<div class="size-row on" data-sz="' + escapeAttr(x.sku) + '">' +
+            '<input type="checkbox" class="size-cb" checked>' +
+            '<span class="size-name">' + escapeHtml(x.sku) + '（已不在尺码库）</span>' +
+            '<div class="stepper">' +
+            '<button type="button" class="step-btn" data-step="-1">−</button>' +
+            '<input class="step-val" type="text" inputmode="numeric" pattern="[0-9]*" value="' + (Number(x.stock) || 0) + '">' +
+            '<button type="button" class="step-btn" data-step="1">＋</button>' +
+            '</div></div>';
+        });
+        return '<div class="form-group"><label class="form-label">' + f.label + '</label>' +
+          '<div class="size-list" id="f_' + f.k + '">' +
+          (sizeRows || '<p class="section-desc">还没有尺码，先到下方「管理尺码」添加</p>') + '</div>' +
+          '<p class="section-desc" style="margin-top:8px">点尺码名勾选或取消；数量用 − ＋ 调，也可直接点数字输入。</p></div>';
+      }
+      if (f.type === "assoc") {
+        /* 关联商品：系列与商品通过 garment.series（存系列名）双向挂钩，
+           这里直接在系列侧勾选，勾选的归入该系列，取消勾选的自动解绑 */
+        var rows = state.garments.map(function (g) {
+          var on = isEdit && inSeries(g, it);
+          return '<label class="assoc-row">' +
+            '<input type="checkbox" data-pid="' + escapeAttr(g.id) + '"' + (on ? " checked" : "") + '>' +
+            '<span class="assoc-name">' + escapeHtml(g.name) + '</span>' +
+            '<span class="assoc-meta">' + escapeHtml(g.category || "") +
+            (g.price ? " · ¥" + escapeHtml(String(g.price)) : "") + '</span></label>';
+        }).join("");
+        return '<div class="form-group"><label class="form-label">' + f.label + '</label>' +
+          '<div class="assoc-bar" id="assocBar">' +
+          '<span data-a="all">全选</span><span data-a="none">清空</span>' +
+          (isEdit && it.name ? '<span data-a="new">＋ 新增商品并归入本系列</span>' : '') +
+          '</div>' +
+          '<div class="assoc-list" id="f_' + f.k + '">' +
+          (rows || '<p class="section-desc">还没有商品，先到「本期新品」上传</p>') + '</div>' +
+          '<p class="section-desc" style="margin-top:8px">勾选的商品会出现在该系列的「查看系列」列表中；' +
+          '系列改名时，已勾选的商品会自动跟着改，不会变成孤儿数据。</p></div>';
+      }
+      return '<div class="form-group"><label class="form-label">' + f.label + '</label>' +
+        '<input class="form-input" id="f_' + f.k + '" maxlength="' + (f.max || 30) +
+        '" value="' + escapeAttr(val) + '" placeholder="' + escapeAttr(f.ph || "") + '"></div>';
+    }).join("");
+
+    var needsMedia = !NO_MEDIA[key];
+    var mediaOptional = !!OPT_MEDIA[key];
+    var mediaHtml = needsMedia
+      ? '<div class="form-group">' +
+        '<label class="form-label">' + (mediaOptional ? "图片（可选，上传后点击该链接会弹出大图，供长按识别二维码）" : "图片或视频") +
+        (isEdit ? "（不选则保留原文件）" : "") + '</label>' +
+        '<input class="form-file" type="file" id="upFile" accept="' + (mediaOptional ? "image/*" : "image/*,video/*") + '">' +
+        '<div class="preview-box" id="upPreview">' + mediaPreview(it) + '</div>' +
+        (mediaOptional && isEdit && it.media
+          ? '<label class="form-label" style="display:flex;align-items:center;gap:8px;margin-top:10px;cursor:pointer">' +
+            '<input type="checkbox" id="upClearMedia" style="width:auto"> 移除现有图片</label>'
+          : '') +
+        '<div style="margin-top:10px"><button type="button" class="btn btn-outline btn-sm" id="btnCrop" ' +
+        'style="width:100%">调整展示范围（移动 / 缩放确定画面）</button></div>' +
+        '</div>'
+      : '';
+
+    var html =
+      '<div class="sheet-head"><div class="sheet-title">' + (isEdit ? "编辑" : "新增") + " · " + TAB_LABEL[key] + '</div>' +
+      '<button class="sheet-close" id="upClose">关闭</button></div>' +
+      mediaHtml +
+      fieldsHtml +
+      '<div class="loading-wrap" id="upLoading"><div class="loading-line"></div><p>正在保存…</p></div>' +
+      '<div class="form-actions"><button class="btn btn-ghost" id="upCancel">取消</button>' +
+      '<button class="btn btn-primary" id="upSubmit">' +
+      (isEdit ? "保存修改" : (needsMedia ? "上传" : "新增")) + '</button></div>';
+
+    openSheet(html);
+    $("upClose").onclick = closeSheet;
+    $("upCancel").onclick = closeSheet;
+
+    var pending = null;
+    if (needsMedia) {
+      $("upFile").onchange = function (e) {
+        var f = e.target.files && e.target.files[0]; if (!f) return;
+        var isVid = f.type.indexOf("video") === 0;
+        showPreview(URL.createObjectURL(f), isVid);
+        $("upLoading").classList.add("visible");
+        fileToStorable(f).then(function (res) {
+          pending = res;
+          showPreview(res.media, res.type === "video");
+          $("upLoading").classList.remove("visible");
+          toast(res.temp ? "文件较大，仅本次会话内有效" : "文件已就绪");
+        });
+      };
+    }
+    /* 货号：新建时按系列前缀带出默认值；手动改过或扫码填过之后不再自动覆盖 */
+    var codeInput = $("f_code"), seriesSel = $("f_series");
+    var codeTouched = isEdit;
+    if (codeInput && key === "garments") {
+      if (!codeInput.value) codeInput.value = makeCode(seriesSel ? seriesSel.value : "");
+      codeInput.addEventListener("input", function () { codeTouched = true; });
+      if (seriesSel) {
+        seriesSel.onchange = function () {
+          if (key === "garments" && !codeTouched) codeInput.value = makeCode(seriesSel.value);
+        };
+      }
+    }
+    if ($("btnScan")) {
+      $("btnScan").onclick = function () {
+        openScanSheet(function (raw) {
+          var v = normalizeCode(raw, seriesSel ? seriesSel.value : "");
+          codeInput.value = v;
+          codeTouched = true;
+          if (v && codeExists(v, isEdit ? it.id : null)) {
+            toast("货号 " + v + " 已存在，请重新扫码或手动修改", true);
+          } else {
+            toast("已填入货号 " + v);
+          }
+        });
+      };
+    }
+
+    /* 调整展示范围：在上传的原图上拖动 / 缩放，确认后按框内裁剪 */
+    if ($("btnCrop")) {
+      $("btnCrop").onclick = function () {
+        if (pending && pending.type === "video") { toast("视频不支持裁剪展示范围", true); return; }
+        var src = (pending && pending.media) || (it.type === "video" ? "" : it.media);
+        if (!src) { toast("请先选择图片", true); return; }
+        openCropSheet(src, function (out) {
+          pending = { media: out, type: "image", temp: false };
+          showPreview(out, false);
+          toast("展示范围已更新");
+        });
+      };
+    }
+
+    /* 地址管理：地图选点回跳结果自动带入 + 定位/选点按钮 */
+    if (key === "addresses") {
+      var pick = takePick();
+      if (pick) {
+        if (pick.lat && !$("f_lat").value) $("f_lat").value = pick.lat;
+        if (pick.lng && !$("f_lng").value) $("f_lng").value = pick.lng;
+        if (pick.addr && !$("f_addr").value) $("f_addr").value = pick.addr;
+        if (pick.name && !$("f_name").value) $("f_name").value = pick.name;
+        toast("已带入地图选点结果");
+      }
+      if ($("btnPick")) $("btnPick").onclick = pickOnMap;
+      if ($("btnLocate")) {
+        $("btnLocate").onclick = function () {
+          if (!navigator.geolocation) { toast("当前浏览器不支持定位", true); return; }
+          toast("正在定位…");
+          navigator.geolocation.getCurrentPosition(function (pos) {
+            var lat = pos.coords.latitude.toFixed(6), lng = pos.coords.longitude.toFixed(6);
+            $("f_lat").value = lat;
+            $("f_lng").value = lng;
+            regeo(lat, lng).then(function (addrTxt) {
+              if (addrTxt) $("f_addr").value = addrTxt;
+              toast(addrTxt ? "已填充定位与地址" : "已填充经纬度");
+            }).catch(function () {
+              toast("已填充经纬度（未配高德 Key，地址请手动补）");
+            });
+          }, function (e) {
+            toast("定位失败：" + ((e && e.message) || "请检查定位权限"), true);
+          }, { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 });
+        };
+      }
+    }
+
+    /* 尺码行：勾选 + 数量加减 */
+    var sizeBox = $("f_items");
+    if (sizeBox) {
+      Array.prototype.forEach.call(sizeBox.querySelectorAll(".size-row"), function (row) {
+        var cb = row.querySelector(".size-cb"), val = row.querySelector(".step-val");
+        /* fill=true 只在用户主动勾选时把 0 补成 1；初始化时不改，避免「缺货 0」被写成 1 */
+        function sync(fill) {
+          row.classList.toggle("on", cb.checked);
+          if (fill && cb.checked) {
+            var v = parseInt(val.value, 10);
+            if (!(v > 0)) val.value = "1";
+          }
+        }
+        cb.onchange = function () { sync(true); };
+        row.querySelector(".size-name").onclick = function () { cb.checked = !cb.checked; sync(true); };
+        Array.prototype.forEach.call(row.querySelectorAll(".step-btn"), function (b) {
+          b.onclick = function (ev) {
+            ev.preventDefault();
+            var d = parseInt(b.getAttribute("data-step"), 10) || 0;
+            var v = (parseInt(val.value, 10) || 0) + d;
+            if (v < 0) v = 0;
+            if (v > 99999) v = 99999;
+            val.value = String(v);
+            if (v > 0) cb.checked = true;
+            row.classList.toggle("on", cb.checked);
+          };
+        });
+        sync(false);
+      });
+    }
+
+    /* 关联商品的批量操作 */
+    if ($("assocBar")) {
+      Array.prototype.forEach.call($("assocBar").querySelectorAll("[data-a]"), function (b) {
+        b.onclick = function () {
+          var a = b.getAttribute("data-a");
+          if (a === "new") { uploadToSeries(it); return; }
+          Array.prototype.forEach.call($("f_products").querySelectorAll("[data-pid]"), function (cb) {
+            cb.checked = (a === "all");
+          });
+        };
+      });
+    }
+
+    $("upSubmit").onclick = function () {
+      var patch = {};
+      fields.forEach(function (f) {
+        var el = $("f_" + f.k);
+        if (el) patch[f.k] = (el.value || "").trim();   /* geo 这类纯按钮字段没有输入框，跳过 */
+      });
+      var req = REQ_FIELD[key];
+      if (req && !patch[req]) { toast(REQ_MSG[key] || "请填写必填项", true); return; }
+      if (needsMedia && !mediaOptional && !isEdit && !pending) { toast("请选择图片或视频", true); return; }
+      if (pending) { patch.media = pending.media; patch.type = pending.type; }
+
+      var tagVal = "";                          /* 系列标签 ID，保存后写进独立列表 */
+
+      /* 关联商品：只在系列编辑里出现，取勾选中的商品 id */
+      var assocIds = null, assocBox = $("f_products");
+      if (assocBox) {
+        assocIds = [];
+        Array.prototype.forEach.call(assocBox.querySelectorAll("[data-pid]"), function (cb) {
+          if (cb.checked) assocIds.push(cb.getAttribute("data-pid"));
+        });
+      }
+
+      /* 尺码与数量：勾选的尺码各存一条 { sku, stock } */
+      var sizePick = null, sizeBox2 = $("f_items");
+      if (sizeBox2) {
+        sizePick = [];
+        Array.prototype.forEach.call(sizeBox2.querySelectorAll(".size-row"), function (row) {
+          if (!row.querySelector(".size-cb").checked) return;
+          sizePick.push({
+            sku: row.getAttribute("data-sz"),
+            stock: toCount(row.querySelector(".step-val").value)
+          });
+        });
+        if (!sizePick.length) { toast("请至少勾选一个尺码", true); return; }
+        patch.items = sizePick;
+      }
+
+      if (key === "inventory" && !isEdit) {
+        /* 一个商品只保留一条库存记录 */
+        var dup = inventory.some(function (v) { return v.gid === patch.gid; });
+        if (dup) {
+          toast("该商品已有库存记录，请在列表里直接编辑它", true);
+          return;
+        }
+      }
+
+      $("upLoading").classList.add("visible");
+      $("upSubmit").disabled = true;
+
+      var item = {};
+      if (isEdit) for (var p in it) item[p] = it[p];
+      for (var q in patch) item[q] = patch[q];
+      if (!pending && $("upClearMedia") && $("upClearMedia").checked) { item.media = ""; item.type = ""; }
+      if (!isEdit) item.id = uid(key === "garments" ? "g" : key.charAt(0));
+      item.owner = state.session.username;
+      if (key === "garments") {
+        if (!item.category) item.category = catData[0] || "未分类";
+        /* series 在表单里是系列 id，这里还原成 sid + 名字快照 */
+        var sObj = seriesById(item.series);
+        item.sid = sObj ? sObj.id : "";
+        item.series = sObj ? sObj.name : "";
+        var pv = Number(item.price);
+        item.price = (isNaN(pv) || pv <= 0) ? "" : pv;
+        /* 货号：空则按系列前缀生成；必须唯一 */
+        item.code = String(item.code || "").trim();
+        if (!item.code) item.code = makeCode(item.series);
+        if (codeExists(item.code, isEdit ? it.id : null)) {
+          $("upLoading").classList.remove("visible");
+          $("upSubmit").disabled = false;
+          toast("货号 " + item.code + " 已被占用，请换一个", true);
+          return;
+        }
+      }
+      if (key === "series") {
+        /* 前缀不再由人工维护：系统自动分配，撞号就顺延到下一个 */
+        item.code = item.code ? pad5(item.code) : nextSeriesCode();
+        while (sectionData.series.some(function (s) { return s.id !== (isEdit ? it.id : null) && s.code === item.code; })) {
+          item.code = pad5(Number(item.code) + 1);
+        }
+        /* 标签 ID：只存进独立的 xx_seriestags 列表，不写进系列对象 */
+        var rawTag = String(item.tag || "").trim();
+        if (rawTag && !/^\d{1,2}$/.test(rawTag)) {
+          $("upLoading").classList.remove("visible");
+          $("upSubmit").disabled = false;
+          toast("系列标签 ID 只能是 1-2 位数字", true);
+          return;
+        }
+        tagVal = rawTag ? pad2(rawTag) : nextSeriesTag();
+        if (seriesTags.some(function (t) { return t.sid !== (isEdit ? it.id : null) && t.tag === tagVal; })) {
+          $("upLoading").classList.remove("visible");
+          $("upSubmit").disabled = false;
+          toast("系列标签 " + tagVal + " 已被占用，请换一个", true);
+          return;
+        }
+        delete item.tag;
+      }
+      if (key === "inventory") {
+        item.alert = toCount(item.alert);
+        item.items = (Object.prototype.toString.call(item.items) === "[object Array]" ? item.items : [])
+          .map(function (x) { return { sku: x.sku || "均码", stock: toCount(x.stock) }; });
+        if (!item.status) item.status = "在售";
+      }
+
+      var job = (key === "garments")
+        ? apiSaveGarment(item, isEdit, state.session.token)
+            .then(function (d) { return { item: (d && d.item) || item, cloud: true }; })
+            .catch(function () { return { item: item, cloud: false }; })
+        : Promise.resolve({ item: item, cloud: false });
+
+      job.then(function (res) {
+        var list = getColl(key).slice();
+        if (isEdit) {
+          list = list.map(function (x) { return x.id === it.id ? res.item : x; });
+        } else {
+          list.unshift(res.item);
+        }
+        setColl(key, list);
+        /* 系列侧勾了商品就在这里落地关联（含改名时同步） */
+        if (assocIds) applySeriesAssoc(res.item.id, assocIds);   /* 按系列 id 落地归属 */
+        if (tagVal) setSeriesTag(res.item.id, res.item.name, tagVal);
+        var backTo = pendingSeries;               /* 从哪个系列来的，保存后回哪儿 */
+        pendingSeries = "";                       /* 清掉「默认系列」，避免下次误带 */
+        refreshColl(key);
+        $("upLoading").classList.remove("visible");
+        $("upSubmit").disabled = false;
+        toast((isEdit ? "已保存修改" : "上传成功") + (key === "garments" ? (res.cloud ? "（云端）" : "（本地）") : ""));
+        var back = backTo ? seriesById(backTo) : null;
+        if (back) openSeriesSheet(back); else openAccountSheet();
+      });
+    };
+  }
+
+  function bindTop() {
+    $("btnAccount").addEventListener("click", function () { if (isAdmin()) openAccountSheet(); else openAuthSheet(); });
+    /* 区块右上角的「编辑」：未登录先登录，已登录直接定位到该区块 */
+    Array.prototype.forEach.call(document.querySelectorAll(".sec-edit"), function (b) {
+      b.addEventListener("click", function () {
+        if (!isAdmin()) { openAuthSheet(); return; }
+        adminTab = b.getAttribute("data-sec");
+        openAccountSheet();
+      });
+    });
+  }
+
+  initData();
+  loadSections();
+  loadCats();
+  loadFooter();
+  loadSizes();
+  loadInventory();
+  loadAddresses();
+  loadNotice();
+  savePickFromQuery();                 /* 从高德选点回跳时，先把结果存下来 */
+  var resetToken = takeResetParam();   /* 邮件里的重置链接：带 ?reset= 进来直接开重置面板 */
+  if (resetToken) openResetSheet(resetToken);
+  loadSeriesTags();
+  ensureSeriesTags();            /* 系列就绪后，给还没有标签 ID 的系列补一个 */
+  ensureSeriesLink();            /* 老商品按名字补 sid，清掉指向已删系列的归属 */
+  ensureCodes();                 /* 系列编号就绪后，给没有货号的老商品补上 */
+  renderNotice();
+  renderFilms(); renderSpaces(); renderGrid(); renderSeries(); renderStores(); renderContacts();
+  renderFooter();
+  renderFilters();
+  bindFilters(); bindNav(); bindViewer(); bindSheetClose(); bindTop(); renderAccountEntry();
+  bindFab();
+  pullSiteConfig();                 /* 以服务端的站点配置为准，覆盖本地缓存 */
+  var reTimer = null;                                   /* 尺寸变化后重建两组轮播 */
+  window.addEventListener("resize", function () {
+    clearTimeout(reTimer);
+    reTimer = setTimeout(function () { renderFilms(); renderSeries(); }, 220);
+  });
+})();
+</script>
+</body>
+</html>

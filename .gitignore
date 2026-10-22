@@ -1,0 +1,15 @@
+node_modules/
+.DS_Store
+Thumbs.db
+*.log
+.env
+.env.local
+
+# 本地预览服务产生的临时文件
+*.tmp
+
+# 素材原图：页面不直接引用，只是本地备份，不必进仓库（约 35MB）
+# 想把它们一起传上去，把下面两行删掉即可
+/*.jpg
+/*.jpeg
+/*.png
