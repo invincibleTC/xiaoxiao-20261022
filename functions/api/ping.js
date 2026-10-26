@@ -1,6 +1,6 @@
 /* 临时诊断接口（用完可删）
  * GET /api/ping
- * 只报告「环境变量里有哪些名字、KV 绑定是不是真对象」，不返回任何值，不泄露密钥。
+ * 只报告「绑定/环境变量是否存在、注入方式是哪一种」，不返回任何值，不泄露密钥。
  */
 export async function onRequestGet(context) {
   const env = context.env || {};
@@ -9,40 +9,74 @@ export async function onRequestGet(context) {
   /* 只露出跟存储/鉴权相关的名字，其余一律不返回 */
   const watch = names.filter((k) => /KV|SITE|ADMIN|AUTH|MAIL|BUCKET|COS/i.test(k));
 
-  const kv = env.SITE_KV || env.GARMENTS_KV || null;
+  /* 逐个检测 KV 可能出现的三个位置 */
+  const probe = {
+    "env.GARMENTS_KV": safeType(() => env.GARMENTS_KV),
+    "env.SITE_KV": safeType(() => env.SITE_KV),
+    "global GARMENTS_KV": safeType(() => (typeof GARMENTS_KV === "undefined" ? undefined : GARMENTS_KV)),
+    "global SITE_KV": safeType(() => (typeof SITE_KV === "undefined" ? undefined : SITE_KV)),
+    "globalThis.GARMENTS_KV": safeType(() => globalThis.GARMENTS_KV),
+    "globalThis.SITE_KV": safeType(() => globalThis.SITE_KV)
+  };
+
+  /* 找出真正可用的那个 */
+  const found = pickKV(env);
 
   return new Response(JSON.stringify({
     ok: true,
     runtime: "edgeone-functions",
-    /* 这些名字存在 = 已经注入；不存在 = 没注入 */
     envKeys: watch,
-    kv: {
-      pickedFrom: env.SITE_KV ? "SITE_KV" : (env.GARMENTS_KV ? "GARMENTS_KV" : "none"),
-      type: typeof kv,
-      isKvObject: !!(kv && typeof kv === "object" && typeof kv.get === "function"),
-      /* 常见误配：被同名环境变量覆盖成字符串 */
-      looksLikeString: typeof kv === "string"
-    },
-    /* 真能读 KV 就顺带测一下读写 */
-    probe: kv && typeof kv.get === "function"
-      ? await probeKV(kv)
-      : { skipped: "函数没有拿到 KV 对象，无法读写" }
+    injection: probe,
+    picked: found.from,
+    isKvObject: !!(found.kv && typeof found.kv.get === "function"),
+    /* 真拿到就实测读写 */
+    test: found.kv && typeof found.kv.get === "function"
+      ? await testKV(found.kv)
+      : { skipped: "任何位置都没拿到 KV 对象" }
   }, null, 2), {
     headers: { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" }
   });
 }
 
-async function probeKV(kv) {
+function safeType(fn) {
+  try {
+    const v = fn();
+    if (v === undefined) return "undefined";
+    if (v === null) return "null";
+    if (typeof v === "object") return typeof v.get === "function" ? "kv-object" : "object(no get)";
+    return typeof v;
+  } catch (e) {
+    return "throw: " + ((e && e.message) || e);
+  }
+}
+
+function pickKV(env) {
+  const e = env || {};
+  let kv = e.SITE_KV || e.GARMENTS_KV || null, from = e.SITE_KV ? "env.SITE_KV" : (e.GARMENTS_KV ? "env.GARMENTS_KV" : "");
+  if (!kv) { try { if (typeof GARMENTS_KV !== "undefined" && GARMENTS_KV) { kv = GARMENTS_KV; from = "GARMENTS_KV"; } } catch (err) { } }
+  if (!kv) { try { if (typeof SITE_KV !== "undefined" && SITE_KV) { kv = SITE_KV; from = "SITE_KV"; } } catch (err) { } }
+  if (!kv) {
+    const g = globalThis;
+    kv = (g && (g.GARMENTS_KV || g.SITE_KV)) || null;
+    if (kv) from = "globalThis";
+  }
+  if (!(kv && typeof kv.get === "function")) return { kv: null, from: "none" };
+  return { kv: kv, from: from || "unknown" };
+}
+
+async function testKV(kv) {
   try {
     const stamp = "probe-" + Date.now();
     await kv.put("__ping", stamp, { expirationTtl: 120 });
     const back = await kv.get("__ping");
     const siteConfig = await kv.get("site-config");
+    const cred = await kv.get("admin-cred");
     return {
       writeOk: back === stamp,
       readOk: !!back,
       hasSiteConfig: !!siteConfig,
-      siteConfigSize: siteConfig ? String(siteConfig).length : 0
+      siteConfigSize: siteConfig ? String(siteConfig).length : 0,
+      hasAdminCred: !!cred
     };
   } catch (e) {
     return { error: String((e && e.message) || e) };

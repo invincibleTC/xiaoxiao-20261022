@@ -125,7 +125,22 @@ export async function onRequestGet(context) {
 
 /* ── 凭据读取：KV 优先，环境变量兜底 ─────────────────────────── */
 
-function credKV(env) { return env.SITE_KV || env.GARMENTS_KV || null; }
+/* KV 绑定兼容三种注入方式：
+ *   1) env.GARMENTS_KV —— Cloudflare Pages / EdgeOne Functions 的 env 参数
+ *   2) 直接引用绑定名 —— EdgeOne Makers 文档示例的写法（绑定注入到全局作用域）
+ *   3) globalThis.GARMENTS_KV
+ * 任一方式拿到带 get() 的对象即视为已绑定。
+ */
+function resolveKV(env) {
+  const e = env || {};
+  let kv = e.SITE_KV || e.GARMENTS_KV || null;
+  if (!kv) { try { if (typeof GARMENTS_KV !== "undefined") kv = GARMENTS_KV; } catch (err) { } }
+  if (!kv) { try { if (typeof SITE_KV !== "undefined") kv = SITE_KV; } catch (err) { } }
+  if (!kv && typeof globalThis !== "undefined") kv = globalThis.GARMENTS_KV || globalThis.SITE_KV || null;
+  return (kv && typeof kv.get === "function") ? kv : null;
+}
+
+function credKV(env) { return resolveKV(env); }
 
 async function getCred(env) {
   const kv = credKV(env);

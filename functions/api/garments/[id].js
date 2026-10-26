@@ -10,14 +10,16 @@ export async function onRequestPut(context) {
   }
   const payload = await verifyToken(env.AUTH_SECRET, bearer(request), await currentVer(env));
   if (!payload) return unauthorized();
-  if (!env.GARMENTS_KV) return json({ error: "未绑定 GARMENTS_KV" }, 500);
+
+  const kv = resolveKV(env);
+  if (!kv) return json({ error: "未绑定 KV（GARMENTS_KV）" }, 500);
 
   let body;
   try { body = await request.json(); }
   catch (e) { return json({ error: "请求格式错误" }, 400); }
 
   const id = params.id;
-  const raw = await env.GARMENTS_KV.get("list");
+  const raw = await kv.get("list");
   const list = raw ? JSON.parse(raw) : [];
   let found = null;
   const next = list.map(function (x) {
@@ -37,7 +39,7 @@ export async function onRequestPut(context) {
     return found;
   });
   if (!found) return json({ error: "未找到该内容" }, 404);
-  await env.GARMENTS_KV.put("list", JSON.stringify(next));
+  await kv.put("list", JSON.stringify(next));
   return json({ item: found });
 }
 
@@ -49,14 +51,16 @@ export async function onRequestDelete(context) {
   }
   const payload = await verifyToken(env.AUTH_SECRET, bearer(request), await currentVer(env));
   if (!payload) return unauthorized();
-  if (!env.GARMENTS_KV) return json({ error: "未绑定 GARMENTS_KV" }, 500);
+
+  const kv = resolveKV(env);
+  if (!kv) return json({ error: "未绑定 KV（GARMENTS_KV）" }, 500);
 
   const id = params.id;
-  const raw = await env.GARMENTS_KV.get("list");
+  const raw = await kv.get("list");
   const list = raw ? JSON.parse(raw) : [];
   const next = list.filter(function (x) { return x.id !== id; });
   if (next.length === list.length) return json({ error: "未找到该内容" }, 404);
-  await env.GARMENTS_KV.put("list", JSON.stringify(next));
+  await kv.put("list", JSON.stringify(next));
   return json({ ok: true });
 }
 
@@ -82,9 +86,19 @@ async function verifyToken(secret, token, ver) {
   return payload;
 }
 
+/* KV 绑定兼容三种注入方式（env / 全局绑定名 / globalThis） */
+function resolveKV(env) {
+  const e = env || {};
+  let kv = e.SITE_KV || e.GARMENTS_KV || null;
+  if (!kv) { try { if (typeof GARMENTS_KV !== "undefined") kv = GARMENTS_KV; } catch (err) { } }
+  if (!kv) { try { if (typeof SITE_KV !== "undefined") kv = SITE_KV; } catch (err) { } }
+  if (!kv && typeof globalThis !== "undefined") kv = globalThis.GARMENTS_KV || globalThis.SITE_KV || null;
+  return (kv && typeof kv.get === "function") ? kv : null;
+}
+
 /* 当前密码版本号：改过密码后旧 token 一律作废 */
 async function currentVer(env) {
-  const kv = env.SITE_KV || env.GARMENTS_KV || null;
+  const kv = resolveKV(env);
   if (!kv) return 1;
   const raw = await kv.get("admin-cred");
   if (!raw) return 1;

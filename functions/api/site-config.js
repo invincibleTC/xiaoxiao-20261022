@@ -70,7 +70,7 @@ async function verifyToken(secret, token, ver) {
 
 /* 当前密码版本号：改过密码后旧 token 一律作废 */
 async function currentVer(env) {
-  const kv = env.SITE_KV || env.GARMENTS_KV || null;
+  const kv = resolveKV(env);
   if (!kv) return 1;
   const raw = await kv.get("admin-cred");
   if (!raw) return 1;
@@ -107,7 +107,17 @@ function unauthorized() {
   return json({ error: "未登录或登录已过期，请重新登录" }, 401);
 }
 
-function getKV(env) { return env.SITE_KV || env.GARMENTS_KV || null; }
+/* KV 绑定兼容三种注入方式（env / 全局绑定名 / globalThis） */
+function resolveKV(env) {
+  const e = env || {};
+  let kv = e.SITE_KV || e.GARMENTS_KV || null;
+  if (!kv) { try { if (typeof GARMENTS_KV !== "undefined") kv = GARMENTS_KV; } catch (err) { } }
+  if (!kv) { try { if (typeof SITE_KV !== "undefined") kv = SITE_KV; } catch (err) { } }
+  if (!kv && typeof globalThis !== "undefined") kv = globalThis.GARMENTS_KV || globalThis.SITE_KV || null;
+  return (kv && typeof kv.get === "function") ? kv : null;
+}
+
+function getKV(env) { return resolveKV(env); }
 
 function json(data, status = 200) {
   return new Response(JSON.stringify(data), {

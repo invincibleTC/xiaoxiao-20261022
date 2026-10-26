@@ -5,9 +5,9 @@
  * KV 绑定：GARMENTS_KV（EdgeOne Pages 控制台 → 项目设置 → KV 命名空间）
  */
 export async function onRequestGet(context) {
-  const { env } = context;
-  if (!env.GARMENTS_KV) return json({ garments: [], note: "未绑定 GARMENTS_KV" });
-  const raw = await env.GARMENTS_KV.get("list");
+  const kv = resolveKV(context.env);
+  if (!kv) return json({ garments: [], note: "未绑定 KV（GARMENTS_KV）" });
+  const raw = await kv.get("list");
   const garments = raw ? JSON.parse(raw) : [];
   return json({ garments });
 }
@@ -25,9 +25,11 @@ export async function onRequestPost(context) {
   try { body = await request.json(); }
   catch (e) { return json({ error: "请求格式错误" }, 400); }
   if (!body || !body.name) return json({ error: "缺少服装名称" }, 400);
-  if (!env.GARMENTS_KV) return json({ error: "未绑定 GARMENTS_KV" }, 500);
 
-  const raw = await env.GARMENTS_KV.get("list");
+  const kv = resolveKV(env);
+  if (!kv) return json({ error: "未绑定 KV（GARMENTS_KV）" }, 500);
+
+  const raw = await kv.get("list");
   const list = raw ? JSON.parse(raw) : [];
   const item = {
     id: body.id || ("g_" + Date.now().toString(36)),
@@ -44,7 +46,7 @@ export async function onRequestPost(context) {
     owner: payload.sub || "admin"
   };
   list.unshift(item);
-  await env.GARMENTS_KV.put("list", JSON.stringify(list));
+  await kv.put("list", JSON.stringify(list));
   return json({ item });
 }
 
@@ -70,9 +72,19 @@ async function verifyToken(secret, token, ver) {
   return payload;
 }
 
+/* KV 绑定兼容三种注入方式（env / 全局绑定名 / globalThis） */
+function resolveKV(env) {
+  const e = env || {};
+  let kv = e.SITE_KV || e.GARMENTS_KV || null;
+  if (!kv) { try { if (typeof GARMENTS_KV !== "undefined") kv = GARMENTS_KV; } catch (err) { } }
+  if (!kv) { try { if (typeof SITE_KV !== "undefined") kv = SITE_KV; } catch (err) { } }
+  if (!kv && typeof globalThis !== "undefined") kv = globalThis.GARMENTS_KV || globalThis.SITE_KV || null;
+  return (kv && typeof kv.get === "function") ? kv : null;
+}
+
 /* 当前密码版本号：改过密码后旧 token 一律作废 */
 async function currentVer(env) {
-  const kv = env.SITE_KV || env.GARMENTS_KV || null;
+  const kv = resolveKV(env);
   if (!kv) return 1;
   const raw = await kv.get("admin-cred");
   if (!raw) return 1;
